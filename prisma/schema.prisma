@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  WOMAN
+  MEN
+  OTHER
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  password     String
+  name         String         @db.VarChar(100)
+  nick         String?        @db.VarChar(20)
+  cpf          String         @db.VarChar(11)
+  birthDate    DateTime       @map("birth_date") @db.Date
+  gender       Gender
+  nacionality  String         @db.VarChar(50)
+  pacient      Pacient?
+  professional Professional?
+  RefreshToken RefreshToken[]
+
+  @@map("users")
+}
+
+model Pacient {
+  id              Int               @id @default(autoincrement())
+  cep             String?           @db.VarChar(8)
+  street          String?           @db.VarChar(100)
+  district        String?           @db.VarChar(50)
+  complement      String?           @db.VarChar(150)
+  number          String?           @db.VarChar(10)
+  tel             String?           @db.VarChar(10)
+  phone           String            @db.VarChar(11)
+  birthState      String            @map("birth_state") @db.VarChar(2)
+  occupation      String            @db.VarChar(50)
+  scholarity      String            @db.VarChar(50)
+  caregiver       String?           @db.VarChar(100)
+  userId          Int               @unique @map("user_id")
+  professionalId  Int               @map("professional_id")
+  user            User              @relation(fields: [userId], references: [id])
+  professional    Professional      @relation(fields: [professionalId], references: [id])
+  appointments    Appointment[]
+  PacientMedicine PacientMedicine[]
+
+  @@unique([userId, professionalId])
+  @@map("pacients")
+}
+
+model Professional {
+  id                Int               @id @default(autoincrement())
+  professionalEmail String?           @map("professional_email")
+  crf               String            @unique @db.VarChar(20)
+  cep               String?           @db.VarChar(8)
+  street            String?           @db.VarChar(100)
+  district          String?           @db.VarChar(50)
+  complement        String?           @db.VarChar(150)
+  number            String?           @db.VarChar(10)
+  tel               String?           @db.VarChar(10)
+  phone             String            @db.VarChar(11)
+  consultDuration   DateTime?         @map("consult_duration") @db.Time()
+  userId            Int               @unique @map("user_id")
+  user              User              @relation(fields: [userId], references: [id])
+  appointments      Appointment[]
+  workSchedule      WorkSchedule[]
+  Pacient           Pacient[]
+  PacientMedicine   PacientMedicine[]
+
+  @@map("professionals")
+}
+
+enum Weekdays {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+model WorkSchedule {
+  id             Int          @id @default(autoincrement())
+  weekday        Weekdays
+  from           DateTime     @db.Time()
+  to             DateTime     @db.Time()
+  professionalId Int          @map("professional_id")
+  professional   Professional @relation(fields: [professionalId], references: [id])
+
+  @@unique([weekday, from, to, professionalId])
+  @@map("work_schedule")
+}
+
+model Medicine {
+  id               Int               @id @default(autoincrement())
+  comercialName    String            @unique @map("comercial_name") @db.VarChar(50)
+  activePrinciple  String            @map("active_principle") @db.VarChar(50)
+  dosage           String            @db.VarChar(20)
+  therapeuticClass String            @map("therapeutic_class") @db.VarChar(30)
+  category         String            @db.VarChar(30)
+  PacientMedicine  PacientMedicine[]
+
+  @@map("medicines")
+}
+
+model PacientMedicine {
+  id                      Int                       @id @default(autoincrement())
+  medicineId              Int                       @map("medicine_id")
+  pacientId               Int                       @map("pacient_id")
+  professionalId          Int                       @map("professional_id")
+  medicine                Medicine                  @relation(fields: [medicineId], references: [id])
+  pacient                 Pacient                   @relation(fields: [pacientId], references: [id])
+  professional            Professional              @relation(fields: [professionalId], references: [id])
+  pacientMedicineSchedule PacientMedicineSchedule[]
+
+  @@map("pacient_medicines")
+}
+
+enum PacientMedicineFrequency {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  EVERYDAY
+}
+
+model PacientMedicineSchedule {
+  id                Int                      @id @default(autoincrement())
+  pacientMedicineId Int                      @map("pacient_medicine_id")
+  time              DateTime                 @db.Time()
+  frequency         PacientMedicineFrequency
+  endDate           DateTime                 @map("end_date") @db.Timestamp()
+  pacientMedicine   PacientMedicine          @relation(fields: [pacientMedicineId], references: [id])
+
+  @@unique([pacientMedicineId, time])
+  @@map("pacient_medicine_schedule")
+}
+
+model PacientMedicineHistory {
+  id                        Int      @id @default(autoincrement())
+  pacientMedicineScheduleId Int      @map("pacient_medicine_schedule_id")
+  took                      Boolean  @default(false)
+  date                      DateTime @db.Date
+
+  @@map("pacient_medicine_history")
+}
+
+enum AppointmentStatus {
+  FINISHED
+  CANCELED
+  PENDING
+  CONFIRMED
+  DID_NOT_ATTEND
+}
+
+model Appointment {
+  id             Int               @id @default(autoincrement())
+  date           DateTime          @db.Date
+  time           DateTime          @db.Time()
+  status         AppointmentStatus @default(PENDING)
+  professionalId Int               @map("professional_id")
+  pacientId      Int               @map("pacient_id")
+  professional   Professional      @relation(fields: [professionalId], references: [id])
+  pacient        Pacient           @relation(fields: [pacientId], references: [id])
+
+  @@map("appointments")
+}
+
+model RefreshToken {
+  id     String @id @default(uuid())
+  userId Int    @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
