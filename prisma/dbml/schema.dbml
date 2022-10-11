@@ -1,0 +1,190 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Project "PrescrevaFarma" {
+  database_type: 'postgresql'
+  Note: ''
+}
+
+Table users {
+  id Int [pk, increment]
+  email String [unique, not null]
+  password String [not null]
+  name String [not null]
+  nick String
+  cpf String [not null]
+  birthDate DateTime [not null]
+  gender Gender [not null]
+  nacionality String [not null]
+  pacient pacients
+  professional professionals
+  RefreshToken refresh_tokens [not null]
+}
+
+Table pacients {
+  id Int [pk, increment]
+  cep String
+  street String
+  district String
+  complement String
+  number String
+  tel String
+  phone String [not null]
+  birthState String
+  occupation String
+  scholarity String
+  caregiver String
+  userId Int [unique, not null]
+  professionalId Int [not null]
+  user users [not null]
+  professional professionals [not null]
+  appointments appointments [not null]
+  Prescription prescriptions [not null]
+  Forward forwarders [not null]
+
+  indexes {
+    (userId, professionalId) [unique]
+  }
+}
+
+Table professionals {
+  id Int [pk, increment]
+  professionalEmail String
+  crf String [unique, not null]
+  cep String
+  street String
+  district String
+  complement String
+  number String
+  tel String
+  phone String [not null]
+  consultDuration DateTime
+  userId Int [unique, not null]
+  user users [not null]
+  appointments appointments [not null]
+  workSchedule work_schedule [not null]
+  Pacient pacients [not null]
+  Prescription prescriptions [not null]
+  Forward forwarders [not null]
+}
+
+Table work_schedule {
+  id Int [pk, increment]
+  weekday Weekdays [not null]
+  from DateTime [not null]
+  to DateTime [not null]
+  professionalId Int [not null]
+  professional professionals [not null]
+
+  indexes {
+    (weekday, from, to, professionalId) [unique]
+  }
+}
+
+Table medicines {
+  id Int [pk, increment]
+  comercialName String [unique, not null]
+  activePrinciple String [not null]
+  dosage String [not null]
+  therapeuticClass String [not null]
+  category String [not null]
+  PrescriptionMedicine prescription_medicines [not null]
+}
+
+Table prescriptions {
+  id Int [pk, increment]
+  professionalId Int [not null]
+  pacientId Int [not null]
+  aditionalInfos String
+  nonPharmacologicalTherapy String
+  professional professionals [not null]
+  pacient pacients [not null]
+  prescriptionMedicines prescription_medicines [not null]
+}
+
+Table prescription_medicines {
+  id Int [pk, increment]
+  prescriptionId Int [not null]
+  medicineId Int [not null]
+  rules String [not null]
+  prescription prescriptions [not null]
+  medicine medicines [not null]
+}
+
+Table forwarders {
+  id Int [pk, increment]
+  professionalId Int [not null]
+  pacientId Int [not null]
+  medicalExperience String [not null]
+  forwardReason String [not null]
+  professional professionals [not null]
+  pacient pacients [not null]
+}
+
+Table appointments {
+  id Int [pk, increment]
+  date DateTime [not null]
+  time DateTime [not null]
+  status AppointmentStatus [not null, default: 'PENDING']
+  professionalId Int [not null]
+  pacientId Int [not null]
+  professional professionals [not null]
+  pacient pacients [not null]
+}
+
+Table refresh_tokens {
+  id String [pk]
+  userId Int [not null]
+  user users [not null]
+}
+
+Enum Gender {
+  WOMAN
+  MEN
+  OTHER
+}
+
+Enum Weekdays {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+Enum AppointmentStatus {
+  FINISHED
+  CANCELED
+  PENDING
+  CONFIRMED
+  DID_NOT_ATTEND
+}
+
+Ref: pacients.userId - users.id
+
+Ref: pacients.professionalId > professionals.id
+
+Ref: professionals.userId - users.id
+
+Ref: work_schedule.professionalId > professionals.id
+
+Ref: prescriptions.professionalId > professionals.id
+
+Ref: prescriptions.pacientId > pacients.id
+
+Ref: prescription_medicines.prescriptionId > prescriptions.id
+
+Ref: prescription_medicines.medicineId > medicines.id
+
+Ref: forwarders.professionalId > professionals.id
+
+Ref: forwarders.pacientId > pacients.id
+
+Ref: appointments.professionalId > professionals.id
+
+Ref: appointments.pacientId > pacients.id
+
+Ref: refresh_tokens.userId > users.id

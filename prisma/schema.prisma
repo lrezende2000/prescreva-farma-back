@@ -10,6 +10,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+generator dbml {
+  provider            = "prisma-dbml-generator"
+  output              = "./dbml"
+  outputName          = "schema.dbml"
+  projectName         = "PrescrevaFarma"
+  projectDatabaseType = "postgresql"
+}
+
 enum Gender {
   WOMAN
   MEN
@@ -34,47 +42,49 @@ model User {
 }
 
 model Pacient {
-  id              Int               @id @default(autoincrement())
-  cep             String?           @db.VarChar(8)
-  street          String?           @db.VarChar(100)
-  district        String?           @db.VarChar(50)
-  complement      String?           @db.VarChar(150)
-  number          String?           @db.VarChar(10)
-  tel             String?           @db.VarChar(10)
-  phone           String            @db.VarChar(11)
-  birthState      String            @map("birth_state") @db.VarChar(2)
-  occupation      String            @db.VarChar(50)
-  scholarity      String            @db.VarChar(50)
-  caregiver       String?           @db.VarChar(100)
-  userId          Int               @unique @map("user_id")
-  professionalId  Int               @map("professional_id")
-  user            User              @relation(fields: [userId], references: [id])
-  professional    Professional      @relation(fields: [professionalId], references: [id])
-  appointments    Appointment[]
-  PacientMedicine PacientMedicine[]
+  id             Int            @id @default(autoincrement())
+  cep            String?        @db.VarChar(8)
+  street         String?        @db.VarChar(100)
+  district       String?        @db.VarChar(50)
+  complement     String?        @db.VarChar(150)
+  number         String?        @db.VarChar(10)
+  tel            String?        @db.VarChar(10)
+  phone          String         @db.VarChar(11)
+  birthState     String?        @map("birth_state") @db.VarChar(2)
+  occupation     String?        @db.VarChar(50)
+  scholarity     String?        @db.VarChar(50)
+  caregiver      String?        @db.VarChar(100)
+  userId         Int            @unique @map("user_id")
+  professionalId Int            @map("professional_id")
+  user           User           @relation(fields: [userId], references: [id])
+  professional   Professional   @relation(fields: [professionalId], references: [id])
+  appointments   Appointment[]
+  Prescription   Prescription[]
+  Forward        Forward[]
 
   @@unique([userId, professionalId])
   @@map("pacients")
 }
 
 model Professional {
-  id                Int               @id @default(autoincrement())
-  professionalEmail String?           @map("professional_email")
-  crf               String            @unique @db.VarChar(20)
-  cep               String?           @db.VarChar(8)
-  street            String?           @db.VarChar(100)
-  district          String?           @db.VarChar(50)
-  complement        String?           @db.VarChar(150)
-  number            String?           @db.VarChar(10)
-  tel               String?           @db.VarChar(10)
-  phone             String            @db.VarChar(11)
-  consultDuration   DateTime?         @map("consult_duration") @db.Time()
-  userId            Int               @unique @map("user_id")
-  user              User              @relation(fields: [userId], references: [id])
+  id                Int            @id @default(autoincrement())
+  professionalEmail String?        @map("professional_email")
+  crf               String         @unique @db.VarChar(20)
+  cep               String?        @db.VarChar(8)
+  street            String?        @db.VarChar(100)
+  district          String?        @db.VarChar(50)
+  complement        String?        @db.VarChar(150)
+  number            String?        @db.VarChar(10)
+  tel               String?        @db.VarChar(10)
+  phone             String         @db.VarChar(11)
+  consultDuration   DateTime?      @map("consult_duration") @db.Time()
+  userId            Int            @unique @map("user_id")
+  user              User           @relation(fields: [userId], references: [id])
   appointments      Appointment[]
   workSchedule      WorkSchedule[]
   Pacient           Pacient[]
-  PacientMedicine   PacientMedicine[]
+  Prescription      Prescription[]
+  Forward           Forward[]
 
   @@map("professionals")
 }
@@ -102,60 +112,51 @@ model WorkSchedule {
 }
 
 model Medicine {
-  id               Int               @id @default(autoincrement())
-  comercialName    String            @unique @map("comercial_name") @db.VarChar(50)
-  activePrinciple  String            @map("active_principle") @db.VarChar(50)
-  dosage           String            @db.VarChar(20)
-  therapeuticClass String            @map("therapeutic_class") @db.VarChar(30)
-  category         String            @db.VarChar(30)
-  PacientMedicine  PacientMedicine[]
+  id                   Int                    @id @default(autoincrement())
+  comercialName        String                 @unique @map("comercial_name") @db.VarChar(50)
+  activePrinciple      String                 @map("active_principle") @db.VarChar(50)
+  dosage               String                 @db.VarChar(20)
+  therapeuticClass     String                 @map("therapeutic_class") @db.VarChar(30)
+  category             String                 @db.VarChar(30)
+  PrescriptionMedicine PrescriptionMedicine[]
 
   @@map("medicines")
 }
 
-model PacientMedicine {
-  id                      Int                       @id @default(autoincrement())
-  medicineId              Int                       @map("medicine_id")
-  pacientId               Int                       @map("pacient_id")
-  professionalId          Int                       @map("professional_id")
-  medicine                Medicine                  @relation(fields: [medicineId], references: [id])
-  pacient                 Pacient                   @relation(fields: [pacientId], references: [id])
-  professional            Professional              @relation(fields: [professionalId], references: [id])
-  pacientMedicineSchedule PacientMedicineSchedule[]
+model Prescription {
+  id                        Int                    @id @default(autoincrement())
+  professionalId            Int                    @map("professional_id")
+  pacientId                 Int                    @map("pacient_id")
+  aditionalInfos            String?                @map("aditional_infos") @db.Text
+  nonPharmacologicalTherapy String?                @map("non_pharmacological_therapy") @db.Text
+  professional              Professional           @relation(fields: [professionalId], references: [id])
+  pacient                   Pacient                @relation(fields: [pacientId], references: [id])
+  prescriptionMedicines     PrescriptionMedicine[]
 
-  @@map("pacient_medicines")
+  @@map("prescriptions")
 }
 
-enum PacientMedicineFrequency {
-  SUNDAY
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  EVERYDAY
+model PrescriptionMedicine {
+  id             Int          @id @default(autoincrement())
+  prescriptionId Int          @map("prescription_id")
+  medicineId     Int          @map("medicine_id")
+  rules          String       @db.Text
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  medicine       Medicine     @relation(fields: [medicineId], references: [id])
+
+  @@map("prescription_medicines")
 }
 
-model PacientMedicineSchedule {
-  id                Int                      @id @default(autoincrement())
-  pacientMedicineId Int                      @map("pacient_medicine_id")
-  time              DateTime                 @db.Time()
-  frequency         PacientMedicineFrequency
-  endDate           DateTime                 @map("end_date") @db.Timestamp()
-  pacientMedicine   PacientMedicine          @relation(fields: [pacientMedicineId], references: [id])
+model Forward {
+  id                Int          @id @default(autoincrement())
+  professionalId    Int          @map("professional_id")
+  pacientId         Int          @map("pacient_id")
+  medicalExperience String       @db.VarChar(50)
+  forwardReason     String       @db.Text
+  professional      Professional @relation(fields: [professionalId], references: [id])
+  pacient           Pacient      @relation(fields: [pacientId], references: [id])
 
-  @@unique([pacientMedicineId, time])
-  @@map("pacient_medicine_schedule")
-}
-
-model PacientMedicineHistory {
-  id                        Int      @id @default(autoincrement())
-  pacientMedicineScheduleId Int      @map("pacient_medicine_schedule_id")
-  took                      Boolean  @default(false)
-  date                      DateTime @db.Date
-
-  @@map("pacient_medicine_history")
+  @@map("forwarders")
 }
 
 enum AppointmentStatus {
