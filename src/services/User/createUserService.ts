@@ -1,5 +1,5 @@
 import { User } from "@prisma/client";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 import { prismaClient } from "../../database/client";
 import { createUserSchema } from "../../validations/User";

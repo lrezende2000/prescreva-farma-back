@@ -1,15 +1,16 @@
-import { prismaClient } from "../../database/client";
-// import { createUserSchema } from "../../validations/User";
 import { Pacient } from "@prisma/client";
+
+import { prismaClient } from "../../database/client";
+import { createPacientSchema } from "../../validations/Pacient";
 
 type CreatePacientType = Omit<Pacient, "id">;
 
-export const createUserService = async (data: CreatePacientType) => {
-  // const validatedData = await createUserSchema.validate(data);
+export const createPacientService = async (data: CreatePacientType) => {
+  const validatedData = await createPacientSchema.validate(data);
 
-  // const user = await prismaClient.user.create({
-  //   data: validatedData,
-  // });
+  const pacient = await prismaClient.pacient.create({
+    data: validatedData,
+  });
 
-  // return user;
+  return pacient;
 };

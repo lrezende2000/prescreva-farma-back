@@ -34,7 +34,7 @@ export const createProfessionalSchema = yup
       .nullable(),
     tel: yup
       .string()
-      .matches(/^\d{10}$/, "Telefone no formato errado")
+      .matches(/^^\d{10}$$/, "Telefone no formato errado")
       .nullable(),
     phone: yup
       .string()

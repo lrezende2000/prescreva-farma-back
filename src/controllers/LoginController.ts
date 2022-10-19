@@ -5,10 +5,19 @@ import jwt from 'jsonwebtoken';
 import * as yup from 'yup';
 
 import { prismaClient } from '../database/client';
+import { createRefreshTokenService } from '../services/RefreshToken/createRefreshTokenService';
+import { getRefreshTokenService } from '../services/RefreshToken/getRefreshTokenService';
+import { updateUserTokenService } from '../services/User/updateUserTokenService';
+import { refreshUserCredentialsService } from '../services/User/refreshUserCredentialsService';
+import { removeUserCredentialsService } from '../services/User/removeUserCredentialsService';
+import { deleteRefreshTokenByIdService } from '../services/RefreshToken/deleteRefreshTokenService';
+import { createUserService } from '../services/User/createUserService';
 
 const router = express.Router();
 const MS_IN_MINUTE = 1000 * 60;
 const MS_IN_DAY = 24 * 60 * MS_IN_MINUTE;
+const COOKIE_REFRESH_TOKEN_KEY = 'prescreva_farma@rftoken';
+
 const rateLimitConfig: Partial<Options> = {
   windowMs: 5 * MS_IN_MINUTE,
   max: 5,
@@ -21,6 +30,21 @@ const rateLimitConfig: Partial<Options> = {
     });
   },
 };
+
+router.post("/signup", async (req, res) => {
+  const { body } = req;
+
+  const professional = await createUserService(body);
+
+  if (!professional) {
+    throw new Error("Não foi possível criar sua conta");
+  }
+
+  return res.status(201).json({
+    error: false,
+    message: "Usuário criado com sucesso",
+  });
+});
 
 router.post(
   '/login',
@@ -39,7 +63,6 @@ router.post(
         id: true,
         name: true,
         password: true,
-        nick: true,
         email: true,
       },
     });
@@ -58,71 +81,27 @@ router.post(
       throw new Error('Login ou senha incorretos');
     }
 
-    const token = jwt.sign({}, process.env.SECRET, {
-      subject: user.id.toString(),
-      expiresIn: 1000 * 60 * 10,
-      issuer: 'http://localhost',
-      audience: 'prescreve_farma'
-    })
-    const refreshToken = await generateRefreshToken(user.id);
+    const token = await updateUserTokenService(user.id);
 
-    res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'lax' });
+    const refreshToken = await createRefreshTokenService(user.id);
 
-    const newUser = {
+    res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'lax' });
+
+    const returnUser = {
       id: user.id,
       name: user.name,
-      login: user.login,
-      profile: user.profile.name
+      token,
     };
-
-    await client.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        token,
-      }
-    });
-    const permissions = await client.permission.findMany({
-      where: {
-        profilePermission: {
-          some: {
-            profile: {
-              active: true,
-              users: {
-                some: {
-                  id: user.id,
-                  active: true,
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-    const isLeader = !!(await client.project.findFirst({
-      where: {
-        users: {
-          some: {
-            userId: user.id,
-            active: true,
-          }
-        }
-      }
-    }));
 
     return res.json({
       error: false,
       message: 'Login efetuado com sucesso',
-      token,
-      user: newUser,
-      permissions,
-      isLeader,
+      user: returnUser,
     });
   });
 
 interface IRefreshTokenPayload {
-  refreshTokenId: string;
+  rfId: string;
   iat: number;
 }
 
@@ -140,73 +119,34 @@ router.get(
         throw new Error();
       }
 
-      const { refreshTokenId } = jwt.verify(cookies.refreshToken, process.env.REFRESH_TOKEN_SECRET) as IRefreshTokenPayload;
+      const { rfId } = jwt.verify(cookies.refreshToken, process.env.REFRESH_TOKEN_SECRET) as IRefreshTokenPayload;
 
-      const data = await refreshTokenProvider(refreshTokenId);
+      const data = await refreshUserCredentialsService(rfId);
 
       if (!data) {
+        res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { httpOnly: true, sameSite: 'lax' });
+        await deleteRefreshTokenByIdService(rfId);
         throw new Error();
       }
 
-      const { token, refreshToken, userId, user } = data;
+      const { refreshToken, userId } = data;
 
-      if (!user) {
-        res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'lax' });
-        await client.refreshToken.deleteMany({ where: { userId: userId } });
-        throw new Error('Usuário não encontrado');
-      }
+      res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'lax' });
 
-      res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'lax' });
-
-      const newUser = {
-        id: user.id,
-        name: user.name,
-        login: user.login,
-        profile: user.profile.name
-      };
-
-      await client.user.update({
+      const user = await prismaClient.user.findUnique({
         where: {
-          id: user.id,
+          id: userId
         },
-        data: {
-          token,
-        },
-      });
-      const permissions = await client.permission.findMany({
-        where: {
-          profilePermission: {
-            some: {
-              profile: {
-                active: true,
-                users: {
-                  some: {
-                    id: user.id,
-                    active: true,
-                  }
-                }
-              }
-            }
-          }
+        select: {
+          id: true,
+          name: true,
+          token: true,
         }
       });
-      const isLeader = !!(await client.project.findFirst({
-        where: {
-          users: {
-            some: {
-              userId: user.id,
-              active: true,
-            }
-          }
-        }
-      }));
 
       return res.json({
         error: false,
-        token,
-        user: newUser,
-        permissions,
-        isLeader,
+        user,
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -221,29 +161,21 @@ router.get(
 router.post('/logout', async (req, res) => {
   const cookies = req.cookies;
   if (!cookies?.refreshToken) return res.status(204).send('');
-  const refreshToken = cookies.refreshToken;
+  const refreshTokenCookie = cookies.refreshToken;
 
-  const { refreshTokenId } = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET) as IRefreshTokenPayload;
+  const { rfId } = jwt.verify(refreshTokenCookie, process.env.REFRESH_TOKEN_SECRET) as IRefreshTokenPayload;
 
-  const user = await client.user.findFirst({ where: { refreshToken: { some: { id: refreshTokenId } } } });
+  const user = await prismaClient.user.findFirst({ where: { refreshToken: { some: { id: rfId } } } });
 
   if (!user) {
-    res.clearCookie('refreshToken', { secure: true, httpOnly: true, sameSite: 'lax' });
+    res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: true, sameSite: 'lax' });
     return res.status(204).send('');
   }
 
   // Delete refreshToken in db
-  await client.refreshToken.deleteMany({ where: { userId: user.id } });
-  await client.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      token: null,
-    },
-  });
+  await removeUserCredentialsService(user.id);
 
-  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'lax' });
+  res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: true, sameSite: 'lax' });
   return res.status(204).send('');
 });
 
@@ -263,14 +195,9 @@ router.post(
 
       const data = await schema.validate(body);
 
-      const user = await client.user.findFirst({
+      const user = await prismaClient.user.findFirst({
         where: {
-          OR: [{
-            login: data.login,
-          }, {
-            email: data.login
-          }],
-          active: true,
+          email: data.login,
         }
       });
 
@@ -278,16 +205,16 @@ router.post(
         throw new Error();
       }
 
-      const token = generateToken({ userId: user.id }, MS_IN_MINUTE * 15);
-      await client.forgotPasswordToken.create({
-        data: {
-          token,
-          userId: user.id,
-        }
-      });
+      // const token = generateToken({ userId: user.id }, MS_IN_MINUTE * 15);
+      // await prismaClient.forgotPasswordToken.create({
+      //   data: {
+      //     token,
+      //     userId: user.id,
+      //   }
+      // });
 
-      const url = `${req.origin}/resetPassword/?token=${token}`;
-      sendEmail(user.email.trim(), 'AGL WBF - Redefinição de senha', resetPasswordTemplate(user.name, url));
+      // const url = `${req.origin}/resetPassword/?token=${token}`;
+      // sendEmail(user.email.trim(), 'AGL WBF - Redefinição de senha', resetPasswordTemplate(user.name, url));
 
       return res.json({
         error: false,
@@ -303,101 +230,101 @@ router.post(
     }
   });
 
-interface ITokenPayload {
-  userId: number;
-  profile: string;
-  iat: number;
-  exp: number;
-  sub: string;
-}
+// interface ITokenPayload {
+//   userId: number;
+//   profile: string;
+//   iat: number;
+//   exp: number;
+//   sub: string;
+// }
 
-router.post(
-  '/resetPassword',
-  rateLimit({
-    ...rateLimitConfig,
-    store: new MemoryStore(),
-  }),
-  tokenBlacklist,
-  async (req, res) => {
-    const authToken = req.headers.authorization;
+// router.post(
+//   '/resetPassword',
+//   rateLimit({
+//     ...rateLimitConfig,
+//     store: new MemoryStore(),
+//   }),
+//   tokenBlacklist,
+//   async (req, res) => {
+//     const authToken = req.headers.authorization;
 
-    if (!authToken) {
-      return res.status(400).json({
-        error: true,
-        message: 'Token é obrigatório',
-      });
-    }
+//     if (!authToken) {
+//       return res.status(400).json({
+//         error: true,
+//         message: 'Token é obrigatório',
+//       });
+//     }
 
-    const [tokenSchema, token] = authToken.split(' ');
+//     const [tokenSchema, token] = authToken.split(' ');
 
-    if (!/^Bearer$/i.test(tokenSchema)) {
-      return res.status(400).json({
-        error: true,
-        message: 'Token em formato errado',
-      });
-    }
+//     if (!/^Bearer$/i.test(tokenSchema)) {
+//       return res.status(400).json({
+//         error: true,
+//         message: 'Token em formato errado',
+//       });
+//     }
 
-    const data = jwt.verify(token, process.env.SECRET);
-    const { userId } = data as ITokenPayload;
+//     const data = jwt.verify(token, process.env.SECRET);
+//     const { userId } = data as ITokenPayload;
 
-    const { newPassword, passwordConfirmation } = req.body;
+//     const { newPassword, passwordConfirmation } = req.body;
 
-    const schema = yup.object().shape({
-      newPassword: yup.string()
-        .min(8, 'Senha deve ter no mínimo 8 caracteres')
-        .test({
-          name: 'Uppercase letter',
-          message: 'Senha deve contar uma letra maíuscula. Ex.: ABC...',
-          test: (value) => !!value?.match(/[A-Z]/),
-        })
-        .test({
-          name: 'Lowercase letter',
-          message: 'Senha deve contar uma letra minúscula. Ex.: abc...',
-          test: (value) => !!value?.match(/[a-z]/),
-        })
-        .test({
-          name: 'Special characters',
-          message:
-            'Senha deve conter um caracter especial. Ex.: (!@#$%.&*()_-=+)',
-          test: (value) =>
-            !!value?.match(/[`!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~]/),
-        }).required(),
-      passwordConfirmation: yup.string().required().oneOf([yup.ref('newPassword'), null], 'Senhas não conferem'),
-    }).noUnknown();
+//     const schema = yup.object().shape({
+//       newPassword: yup.string()
+//         .min(8, 'Senha deve ter no mínimo 8 caracteres')
+//         .test({
+//           name: 'Uppercase letter',
+//           message: 'Senha deve contar uma letra maíuscula. Ex.: ABC...',
+//           test: (value) => !!value?.match(/[A-Z]/),
+//         })
+//         .test({
+//           name: 'Lowercase letter',
+//           message: 'Senha deve contar uma letra minúscula. Ex.: abc...',
+//           test: (value) => !!value?.match(/[a-z]/),
+//         })
+//         .test({
+//           name: 'Special characters',
+//           message:
+//             'Senha deve conter um caracter especial. Ex.: (!@#$%.&*()_-=+)',
+//           test: (value) =>
+//             !!value?.match(/[`!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~]/),
+//         }).required(),
+//       passwordConfirmation: yup.string().required().oneOf([yup.ref('newPassword'), null], 'Senhas não conferem'),
+//     }).noUnknown();
 
-    await schema.validate({ newPassword, passwordConfirmation });
+//     await schema.validate({ newPassword, passwordConfirmation });
 
-    const user = await client.user.findUnique({ where: { id: userId } });
+//     const user = await client.user.findUnique({ where: { id: userId } });
 
-    if (!user) {
-      throw new Error();
-    }
+//     if (!user) {
+//       throw new Error();
+//     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 8);
-    await client.user.update({
-      where: { id: userId },
-      data: {
-        password: passwordHash,
-        updatedAt: getUTCDate(),
-        token: null,
-      }
-    });
+//     const passwordHash = await bcrypt.hash(newPassword, 8);
+//     await client.user.update({
+//       where: { id: userId },
+//       data: {
+//         password: passwordHash,
+//         updatedAt: getUTCDate(),
+//         token: null,
+//       }
+//     });
 
-    const forgotTokens = await client.forgotPasswordToken.findMany({
-      where: {
-        userId: user.id,
-      }
-    });
+//     const forgotTokens = await client.forgotPasswordToken.findMany({
+//       where: {
+//         userId: user.id,
+//       }
+//     });
 
-    await client.tokenBlacklist.createMany({
-      data: forgotTokens.map(fT => ({ token: fT.token, createdAt: getUTCDate() })),
-    });
-    await client.forgotPasswordToken.deleteMany({ where: { userId: user.id } });
+//     await client.tokenBlacklist.createMany({
+//       data: forgotTokens.map(fT => ({ token: fT.token, createdAt: getUTCDate() })),
+//     });
+//     await client.forgotPasswordToken.deleteMany({ where: { userId: user.id } });
 
-    return res.json({
-      error: false,
-      message: 'Senha alterada com sucesso'
-    });
-  });
+//     return res.json({
+//       error: false,
+//       message: 'Senha alterada com sucesso'
+//     });
+//   });
 
 export default router;

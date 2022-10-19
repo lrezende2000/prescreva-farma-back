@@ -4,6 +4,7 @@ import "express-async-errors";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
+import cookieParser from 'cookie-parser';
 import {
   PrismaClientKnownRequestError,
   PrismaClientUnknownRequestError,
@@ -12,6 +13,8 @@ import {
   PrismaClientValidationError,
 } from "@prisma/client/runtime";
 
+import routes from './routes';
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 
@@ -19,6 +22,9 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());
+app.use(cookieParser());
+
+app.use(routes)
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   if (
@@ -34,6 +40,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   }
 
   if (err instanceof PrismaClientValidationError) {
+    console.log(err.message)
     return res.status(400).json({
       error: true,
       message: "Erro na validação de dados",
@@ -41,6 +48,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   }
 
   if (err instanceof Error) {
+    console.log(err.message)
     return res.status(400).json({
       error: true,
       message: err.message,
