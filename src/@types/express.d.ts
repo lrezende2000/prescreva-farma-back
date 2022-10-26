@@ -4,4 +4,8 @@ declare namespace Express {
     email: string;
     name: string;
   }
+
+  export interface Request {
+    origin: string;
+  }
 }

@@ -29,13 +29,13 @@ Table users {
   nacionality String [not null]
   token String
   refreshToken refresh_tokens [not null]
-  pacients pacients [not null]
+  patients patients [not null]
   prescriptions prescriptions [not null]
   forwarders forwarders [not null]
   appointments appointments [not null]
 }
 
-Table pacients {
+Table patients {
   id Int [pk, increment]
   email String [unique, not null]
   name String [not null]
@@ -52,46 +52,57 @@ Table pacients {
   forwarders forwarders [not null]
 }
 
-Table prescriptions {
-  id Int [pk, increment]
-  professionalId Int [not null]
-  pacientId Int [not null]
-  aditionalInfos String
-  nonPharmacologicalTherapy String
-  professional users [not null]
-  pacient pacients [not null]
-  medicines medicines [not null]
-}
-
 Table medicines {
   id Int [pk, increment]
   name String [not null]
-  pharmaceuticShape String [not null]
-  administrationWay String [not null]
-  dosage String [not null]
+  subGroup String [not null]
+  pharmaceuticalForm String [not null]
+  maximumDosage String [not null]
+  therapeuticIndication String [not null]
+  prescriptionMedicines prescription_medicines [not null]
+}
+
+Table prescriptions {
+  id Int [pk, increment]
+  professionalId Int [not null]
+  patientId Int [not null]
+  aditionalInfos String
+  nonPharmacologicalTherapy String
+  professional users [not null]
+  patient patients [not null]
+  prescriptionMedicines prescription_medicines [not null]
+}
+
+Table prescription_medicines {
+  id Int [pk, increment]
   prescriptionId Int [not null]
-  Prescription prescriptions [not null]
+  medicineId Int [not null]
+  concentration String [not null]
+  instructions String [not null]
+  prescription prescriptions [not null]
+  medicine medicines [not null]
 }
 
 Table forwarders {
   id Int [pk, increment]
   professionalId Int [not null]
-  pacientId Int [not null]
+  patientId Int [not null]
   medicalExperience String [not null]
   forwardReason String [not null]
   professional users [not null]
-  pacient pacients [not null]
+  patient patients [not null]
 }
 
 Table appointments {
   id Int [pk, increment]
   date DateTime [not null]
-  time DateTime [not null]
+  start DateTime [not null]
+  end DateTime [not null]
   status AppointmentStatus [not null, default: 'PENDING']
   professionalId Int [not null]
-  pacientId Int [not null]
+  patientId Int [not null]
   professional users [not null]
-  pacient pacients [not null]
+  patient patients [not null]
 }
 
 Table refresh_tokens {
@@ -114,20 +125,22 @@ Enum AppointmentStatus {
   DID_NOT_ATTEND
 }
 
-Ref: pacients.professionalId > users.id
+Ref: patients.professionalId > users.id
 
 Ref: prescriptions.professionalId > users.id
 
-Ref: prescriptions.pacientId > pacients.id
+Ref: prescriptions.patientId > patients.id
 
-Ref: medicines.prescriptionId > prescriptions.id
+Ref: prescription_medicines.prescriptionId > prescriptions.id
+
+Ref: prescription_medicines.medicineId > medicines.id
 
 Ref: forwarders.professionalId > users.id
 
-Ref: forwarders.pacientId > pacients.id
+Ref: forwarders.patientId > patients.id
 
 Ref: appointments.professionalId > users.id
 
-Ref: appointments.pacientId > pacients.id
+Ref: appointments.patientId > patients.id
 
 Ref: refresh_tokens.userId > users.id

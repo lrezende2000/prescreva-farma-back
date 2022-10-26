@@ -46,7 +46,7 @@ model User {
   nacionality   String         @db.VarChar(50)
   token         String?
   refreshToken  RefreshToken[]
-  pacients      Pacient[]
+  patients      Patient[]
   prescriptions Prescription[]
   forwarders    Forward[]
   appointments  Appointment[]
@@ -54,7 +54,7 @@ model User {
   @@map("users")
 }
 
-model Pacient {
+model Patient {
   id             Int            @id @default(autoincrement())
   email          String         @unique
   name           String         @db.VarChar(100)
@@ -70,16 +70,16 @@ model Pacient {
   prescriptions  Prescription[]
   forwarders     Forward[]
 
-  @@map("pacients")
+  @@map("patients")
 }
 
 model Medicine {
   id                    Int                     @id @default(autoincrement())
-  name                  String                  @db.VarChar(100)
-  subGroup              String                  @map("sub_group") @db.VarChar(200)
-  pharmaceuticalForm    String                  @map("pharmaceutical_form") @db.VarChar(100)
-  maximumDosage         String                  @map("maximum_dosage") @db.VarChar(20)
-  therapeuticIndication String                  @map("therapeutic_indication") @db.VarChar(255)
+  name                  String
+  subGroup              String                  @map("sub_group")
+  pharmaceuticalForm    String                  @map("pharmaceutical_form")
+  maximumDosage         String                  @map("maximum_dosage")
+  therapeuticIndication String                  @map("therapeutic_indication") @db.Text
   prescriptionMedicines PrescriptionMedicines[]
 
   @@map("medicines")
@@ -88,11 +88,11 @@ model Medicine {
 model Prescription {
   id                        Int                     @id @default(autoincrement())
   professionalId            Int                     @map("professional_id")
-  pacientId                 Int                     @map("pacient_id")
+  patientId                 Int                     @map("patient_id")
   aditionalInfos            String?                 @map("aditional_infos") @db.Text
   nonPharmacologicalTherapy String?                 @map("non_pharmacological_therapy") @db.Text
   professional              User                    @relation(fields: [professionalId], references: [id])
-  pacient                   Pacient                 @relation(fields: [pacientId], references: [id])
+  patient                   Patient                 @relation(fields: [patientId], references: [id])
   prescriptionMedicines     PrescriptionMedicines[]
 
   @@map("prescriptions")
@@ -102,7 +102,7 @@ model PrescriptionMedicines {
   id             Int          @id @default(autoincrement())
   prescriptionId Int          @map("prescription_id")
   medicineId     Int          @map("medicine_id")
-  concentration  String       @db.VarChar(20)
+  concentration  String
   instructions   String       @db.VarChar(255)
   prescription   Prescription @relation(fields: [prescriptionId], references: [id])
   medicine       Medicine     @relation(fields: [medicineId], references: [id])
@@ -113,11 +113,11 @@ model PrescriptionMedicines {
 model Forward {
   id                Int     @id @default(autoincrement())
   professionalId    Int     @map("professional_id")
-  pacientId         Int     @map("pacient_id")
+  patientId         Int     @map("patient_id")
   medicalExperience String  @db.VarChar(50)
   forwardReason     String  @db.Text
   professional      User    @relation(fields: [professionalId], references: [id])
-  pacient           Pacient @relation(fields: [pacientId], references: [id])
+  patient           Patient @relation(fields: [patientId], references: [id])
 
   @@map("forwarders")
 }
@@ -133,12 +133,13 @@ enum AppointmentStatus {
 model Appointment {
   id             Int               @id @default(autoincrement())
   date           DateTime          @db.Date
-  time           DateTime          @db.Time()
+  start          DateTime          @db.Time()
+  end            DateTime          @db.Time()
   status         AppointmentStatus @default(PENDING)
   professionalId Int               @map("professional_id")
-  pacientId      Int               @map("pacient_id")
+  patientId      Int               @map("patient_id")
   professional   User              @relation(fields: [professionalId], references: [id])
-  pacient        Pacient           @relation(fields: [pacientId], references: [id])
+  patient        Patient           @relation(fields: [patientId], references: [id])
 
   @@map("appointments")
 }

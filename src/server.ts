@@ -14,11 +14,25 @@ import {
 } from "@prisma/client/runtime";
 
 import routes from './routes';
+import allowedOrigins from "./config/allowedOrigins";
+import credentials from "./middlewares/credentials";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-app.use(cors());
+app.use(credentials);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (origin && allowedOrigins.includes(origin) || !origin) {
+      callback(null, true)
+    } else {
+      const error = new Error('Not allowed by CORS')
+      error.stack = "";
+      callback(error);
+    }
+  },
+  optionsSuccessStatus: 200
+}));
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());

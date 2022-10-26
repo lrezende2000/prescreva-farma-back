@@ -16,7 +16,7 @@ import { createUserService } from '../services/User/createUserService';
 const router = express.Router();
 const MS_IN_MINUTE = 1000 * 60;
 const MS_IN_DAY = 24 * 60 * MS_IN_MINUTE;
-const COOKIE_REFRESH_TOKEN_KEY = 'prescreva_farma@rftoken';
+export const COOKIE_REFRESH_TOKEN_KEY = 'prescreva_farma@rftoken';
 
 const rateLimitConfig: Partial<Options> = {
   windowMs: 5 * MS_IN_MINUTE,
@@ -107,19 +107,15 @@ interface IRefreshTokenPayload {
 
 router.get(
   '/refresh',
-  rateLimit({
-    ...rateLimitConfig,
-    store: new MemoryStore(),
-  }),
   async (req, res) => {
     try {
       const cookies = req.cookies;
 
-      if (!cookies?.refreshToken) {
-        throw new Error();
+      if (!cookies?.[COOKIE_REFRESH_TOKEN_KEY]) {
+        throw new Error("Token não encontrado");
       }
 
-      const { rfId } = jwt.verify(cookies.refreshToken, process.env.REFRESH_TOKEN_SECRET) as IRefreshTokenPayload;
+      const { rfId } = jwt.verify(cookies[COOKIE_REFRESH_TOKEN_KEY], process.env.REFRESH_TOKEN_SECRET) as IRefreshTokenPayload;
 
       const data = await refreshUserCredentialsService(rfId);
 
@@ -150,6 +146,7 @@ router.get(
       });
     } catch (err) {
       if (err instanceof Error) {
+        console.log(err);
         return res.status(403).json({
           error: true,
           message: 'Token inválido ou expirado! Logue-se novamente',
@@ -160,8 +157,8 @@ router.get(
 
 router.post('/logout', async (req, res) => {
   const cookies = req.cookies;
-  if (!cookies?.refreshToken) return res.status(204).send('');
-  const refreshTokenCookie = cookies.refreshToken;
+  if (!cookies?.[COOKIE_REFRESH_TOKEN_KEY]) return res.status(204).send('');
+  const refreshTokenCookie = cookies[COOKIE_REFRESH_TOKEN_KEY];
 
   const { rfId } = jwt.verify(refreshTokenCookie, process.env.REFRESH_TOKEN_SECRET) as IRefreshTokenPayload;
 

@@ -69,7 +69,7 @@ export const createUserSchema = yup
       .matches(/^\d{10}$/, "Telefone no formato errado"),
     phone: yup
       .string()
-      .matches(/\d{11}/,)
+      .matches(/\d{11}/, "Celular no formato errado")
       .required("Celular é obrigatório"),
   })
   .noUnknown();

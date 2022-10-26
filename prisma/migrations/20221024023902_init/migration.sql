@@ -47,6 +47,18 @@ CREATE TABLE "pacients" (
 );
 
 -- CreateTable
+CREATE TABLE "medicines" (
+    "id" SERIAL NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "sub_group" VARCHAR(200) NOT NULL,
+    "pharmaceutical_form" VARCHAR(100) NOT NULL,
+    "maximum_dosage" VARCHAR(20) NOT NULL,
+    "therapeutic_indication" VARCHAR(255) NOT NULL,
+
+    CONSTRAINT "medicines_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "prescriptions" (
     "id" SERIAL NOT NULL,
     "professional_id" INTEGER NOT NULL,
@@ -58,15 +70,14 @@ CREATE TABLE "prescriptions" (
 );
 
 -- CreateTable
-CREATE TABLE "medicines" (
+CREATE TABLE "prescription_medicines" (
     "id" SERIAL NOT NULL,
-    "name" VARCHAR(100) NOT NULL,
-    "pharmaceutic_shape" VARCHAR(50) NOT NULL,
-    "administration_way" VARCHAR(50) NOT NULL,
-    "dosage" TEXT NOT NULL,
-    "prescriptionId" INTEGER NOT NULL,
+    "prescription_id" INTEGER NOT NULL,
+    "medicine_id" INTEGER NOT NULL,
+    "concentration" VARCHAR(20) NOT NULL,
+    "instructions" VARCHAR(255) NOT NULL,
 
-    CONSTRAINT "medicines_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "prescription_medicines_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -116,7 +127,10 @@ ALTER TABLE "prescriptions" ADD CONSTRAINT "prescriptions_professional_id_fkey" 
 ALTER TABLE "prescriptions" ADD CONSTRAINT "prescriptions_pacient_id_fkey" FOREIGN KEY ("pacient_id") REFERENCES "pacients"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "medicines" ADD CONSTRAINT "medicines_prescriptionId_fkey" FOREIGN KEY ("prescriptionId") REFERENCES "prescriptions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "prescription_medicines" ADD CONSTRAINT "prescription_medicines_prescription_id_fkey" FOREIGN KEY ("prescription_id") REFERENCES "prescriptions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "prescription_medicines" ADD CONSTRAINT "prescription_medicines_medicine_id_fkey" FOREIGN KEY ("medicine_id") REFERENCES "medicines"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "forwarders" ADD CONSTRAINT "forwarders_professional_id_fkey" FOREIGN KEY ("professional_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
