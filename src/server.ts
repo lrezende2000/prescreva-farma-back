@@ -23,7 +23,6 @@ const PORT = process.env.PORT || 8000;
 app.use(credentials);
 app.use(cors({
   origin: (origin, callback) => {
-    console.log(origin)
     if (origin && allowedOrigins.includes(origin) || !origin) {
       callback(null, true)
     } else {
