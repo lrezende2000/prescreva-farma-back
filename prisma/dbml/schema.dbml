@@ -33,11 +33,12 @@ Table users {
   prescriptions prescriptions [not null]
   forwarders forwarders [not null]
   appointments appointments [not null]
+  Avaliation Avaliation [not null]
 }
 
 Table patients {
   id Int [pk, increment]
-  email String [unique, not null]
+  email String [not null]
   name String [not null]
   birthDate DateTime [not null]
   gender Gender [not null]
@@ -50,6 +51,10 @@ Table patients {
   appointments appointments [not null]
   prescriptions prescriptions [not null]
   forwarders forwarders [not null]
+
+  indexes {
+    (professionalId, email) [unique]
+  }
 }
 
 Table medicines {
@@ -68,6 +73,7 @@ Table prescriptions {
   patientId Int [not null]
   aditionalInfos String
   nonPharmacologicalTherapy String
+  createdAt DateTime [default: `now()`, not null]
   professional users [not null]
   patient patients [not null]
   prescriptionMedicines prescription_medicines [not null]
@@ -79,6 +85,7 @@ Table prescription_medicines {
   medicineId Int [not null]
   concentration String [not null]
   instructions String [not null]
+  administrationForm String [not null]
   prescription prescriptions [not null]
   medicine medicines [not null]
 }
@@ -103,6 +110,13 @@ Table appointments {
   patientId Int [not null]
   professional users [not null]
   patient patients [not null]
+}
+
+Table Avaliation {
+  id Int [pk, increment]
+  grade Int [not null]
+  professionalId Int [not null]
+  professional users [not null]
 }
 
 Table refresh_tokens {
@@ -142,5 +156,7 @@ Ref: forwarders.patientId > patients.id
 Ref: appointments.professionalId > users.id
 
 Ref: appointments.patientId > patients.id
+
+Ref: Avaliation.professionalId > users.id
 
 Ref: refresh_tokens.userId > users.id
