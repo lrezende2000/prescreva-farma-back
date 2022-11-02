@@ -3,15 +3,12 @@ import { Prescription } from "@prisma/client";
 import { prismaClient } from "../../database/client";
 // import { createPacientSchema } from "../../validations/Pacient";
 
-type CreatePrescriptionType = Prescription;
+type UpdatePrescriptionType = Omit<Prescription, 'id'>;
 
-export const createPacientService = async (data: CreatePrescriptionType) => {
+export const updatePacientService = async (data: UpdatePrescriptionType, prescriptionId: number) => {
   // const validatedData = await createPacientSchema.validate(data);
 
-  const prescriptionId = data.id;
   const update = { ...data };
-
-  delete update.id;
 
   const prescription = await prismaClient.prescription.update({
     where: {

@@ -1,7 +1,7 @@
 import * as yup from "yup";
 import { Gender } from "@prisma/client";
 
-export const createPacientSchema = yup
+export const createPatientSchema = yup
   .object()
   .shape({
     email: yup
@@ -13,11 +13,8 @@ export const createPacientSchema = yup
       .max(100, "Nome precisa ter menos de 100 caracteres")
       .required("Nome é obrigatório"),
     birthDate: yup
-      .string()
-      .matches(
-        /^(0[1-9]|[12][0-9]|3[01])(\/|-)(0?[1-9]|1[012])(\/|-)(19|20)\d{2}$/,
-        "Data de nascimento no formato errado"
-      )
+      .date()
+      .typeError('Data no formato errado')
       .required("Data de nascimento é obrigatória"),
     gender: yup
       .mixed()

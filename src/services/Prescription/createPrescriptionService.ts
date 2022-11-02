@@ -1,16 +1,24 @@
 import { Prescription } from "@prisma/client";
 
 import { prismaClient } from "../../database/client";
-// import { createPacientSchema } from "../../validations/Pacient";
+import { createPrescriptionSchema } from "../../validations/Prescription";
 
 type CreatePrescriptionType = Omit<Prescription, "id">;
 
-export const createPacientService = async (data: CreatePrescriptionType) => {
-  // const validatedData = await createPacientSchema.validate(data);
+export const createPrescriptionService = async (data: CreatePrescriptionType) => {
+  const { prescriptionMedicines, ...validatedData } = await createPrescriptionSchema.validate(data);
 
-  const pacient = await prismaClient.prescription.create({
-    data: data,
+  const prescription = await prismaClient.prescription.create({
+    data: {
+      ...validatedData,
+      prescriptionMedicines: {
+        createMany: {
+          data: prescriptionMedicines,
+          skipDuplicates: true,
+        }
+      }
+    },
   });
 
-  return pacient;
+  return prescription;
 };

@@ -80,7 +80,7 @@ router.get('/list', async (req, res) => {
   })
 })
 
-router.get('/list/all', async (req, res) => {
+router.get('/list/all', async (_, res) => {
   const medicines = await prismaClient.medicine.findMany({
     orderBy: {
       name: 'asc'

@@ -50,13 +50,14 @@ model User {
   prescriptions Prescription[]
   forwarders    Forward[]
   appointments  Appointment[]
+  Avaliation    Avaliation[]
 
   @@map("users")
 }
 
 model Patient {
   id             Int            @id @default(autoincrement())
-  email          String         @unique
+  email          String
   name           String         @db.VarChar(100)
   birthDate      DateTime       @map("birth_date") @db.Date
   gender         Gender
@@ -70,6 +71,7 @@ model Patient {
   prescriptions  Prescription[]
   forwarders     Forward[]
 
+  @@unique([professionalId, email])
   @@map("patients")
 }
 
@@ -91,6 +93,7 @@ model Prescription {
   patientId                 Int                     @map("patient_id")
   aditionalInfos            String?                 @map("aditional_infos") @db.Text
   nonPharmacologicalTherapy String?                 @map("non_pharmacological_therapy") @db.Text
+  createdAt                 DateTime                @default(now())
   professional              User                    @relation(fields: [professionalId], references: [id])
   patient                   Patient                 @relation(fields: [patientId], references: [id])
   prescriptionMedicines     PrescriptionMedicines[]
@@ -99,13 +102,14 @@ model Prescription {
 }
 
 model PrescriptionMedicines {
-  id             Int          @id @default(autoincrement())
-  prescriptionId Int          @map("prescription_id")
-  medicineId     Int          @map("medicine_id")
-  concentration  String
-  instructions   String       @db.VarChar(255)
-  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
-  medicine       Medicine     @relation(fields: [medicineId], references: [id])
+  id                 Int          @id @default(autoincrement())
+  prescriptionId     Int          @map("prescription_id")
+  medicineId         Int          @map("medicine_id")
+  concentration      String
+  instructions       String       @db.VarChar(255)
+  administrationForm String       @db.VarChar(20)
+  prescription       Prescription @relation(fields: [prescriptionId], references: [id])
+  medicine           Medicine     @relation(fields: [medicineId], references: [id])
 
   @@map("prescription_medicines")
 }
@@ -142,6 +146,13 @@ model Appointment {
   patient        Patient           @relation(fields: [patientId], references: [id])
 
   @@map("appointments")
+}
+
+model Avaliation {
+  id             Int  @id @default(autoincrement())
+  grade          Int
+  professionalId Int  @map("professional_id")
+  professional   User @relation(fields: [professionalId], references: [id])
 }
 
 model RefreshToken {
