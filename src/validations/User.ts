@@ -40,7 +40,7 @@ export const createUserSchema = yup
       .required("Nacionalidade é obrigatória"),
     password: yup
       .string()
-      .min(5, "Senha deve ter no mínimo 5 caracteres")
+      .min(6, "Senha deve ter no mínimo 6 caracteres")
       .max(20, "Senha de ter no máximo 20 caracteres")
       .required("Senha é obrigatória"),
     cep: yup
@@ -66,7 +66,9 @@ export const createUserSchema = yup
       .required("Estado é obrigatório"),
     tel: yup
       .string()
-      .matches(/^\d{10}$/, "Telefone no formato errado"),
+      .matches(/^\d{10}$/, "Telefone no formato errado")
+      .nullable()
+      .transform((value) => !!value ? value : null),
     phone: yup
       .string()
       .matches(/\d{11}/, "Celular no formato errado")

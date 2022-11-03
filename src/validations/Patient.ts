@@ -29,7 +29,9 @@ export const createPatientSchema = yup
       .required("Nacionalidade é obrigatória"),
     tel: yup
       .string()
-      .matches(/^\d{10}$/, "Telefone no formato errado"),
+      .matches(/^\d{10}$/, "Telefone no formato errado")
+      .nullable()
+      .transform((value) => !!value ? value : null),
     phone: yup
       .string()
       .matches(/^\d{11}$/,)

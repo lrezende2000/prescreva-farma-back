@@ -3,6 +3,7 @@ import * as yup from 'yup';
 
 import { prismaClient } from '../database/client';
 import { createPacientService } from '../services/Patient/createPatientService';
+import { createPatientSchema } from '../validations/Patient';
 
 const router = express.Router();
 
@@ -93,6 +94,81 @@ router.get('/list/all', async (req, res) => {
   return res.json({
     error: false,
     rows: patients,
+  });
+});
+
+router.get('/:id', async (req, res) => {
+  const { params: { id }, user } = req;
+
+  const patient = await prismaClient.patient.findFirst({
+    where: {
+      id: parseInt(id),
+      professionalId: user?.id,
+    }
+  });
+
+  if (!patient) {
+    throw new Error('Paciente não encontrado');
+  }
+
+  return res.json({
+    error: false,
+    patient,
+  });
+});
+
+router.put('/:id', async (req, res) => {
+  const { params: { id }, body, user } = req;
+
+  const patient = await prismaClient.patient.findFirst({
+    where: {
+      id: parseInt(id),
+      professionalId: user?.id,
+    },
+  });
+
+  if (!patient) {
+    throw new Error('Paciente não encontrado');
+  }
+
+  const data = await createPatientSchema.validate({ ...body, professionalId: user?.id });
+
+  await prismaClient.patient.update({
+    where: {
+      id: patient.id,
+    },
+    data,
+  });
+
+  return res.json({
+    error: false,
+    message: 'Paciente editado com sucesso',
+  });
+})
+
+router.delete('/:id', async (req, res) => {
+  const { params: { id }, user } = req;
+
+  const patient = await prismaClient.patient.findFirst({
+    where: {
+      id: parseInt(id),
+      professionalId: user?.id,
+    },
+  });
+
+  if (!patient) {
+    throw new Error('Paciente não encontrado');
+  }
+
+  await prismaClient.patient.delete({
+    where: {
+      id: patient.id,
+    },
+  });
+
+  return res.json({
+    error: false,
+    message: 'Paciente deletado com sucesso',
   });
 });
 
