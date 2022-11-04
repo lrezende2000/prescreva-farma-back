@@ -102,10 +102,8 @@ Table forwarders {
 
 Table appointments {
   id Int [pk, increment]
-  date DateTime [not null]
   start DateTime [not null]
   end DateTime [not null]
-  status AppointmentStatus [not null, default: 'PENDING']
   professionalId Int [not null]
   patientId Int [not null]
   professional users [not null]
@@ -129,14 +127,6 @@ Enum Gender {
   WOMAN
   MEN
   OTHER
-}
-
-Enum AppointmentStatus {
-  FINISHED
-  CANCELED
-  PENDING
-  CONFIRMED
-  DID_NOT_ATTEND
 }
 
 Ref: patients.professionalId > users.id

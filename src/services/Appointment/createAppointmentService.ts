@@ -1,4 +1,5 @@
 import { Appointment } from "@prisma/client";
+import moment from "moment";
 
 import { prismaClient } from "../../database/client";
 import { createAppointmentSchema } from "../../validations/Appointment";

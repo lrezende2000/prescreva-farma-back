@@ -126,24 +126,14 @@ model Forward {
   @@map("forwarders")
 }
 
-enum AppointmentStatus {
-  FINISHED
-  CANCELED
-  PENDING
-  CONFIRMED
-  DID_NOT_ATTEND
-}
-
 model Appointment {
-  id             Int               @id @default(autoincrement())
-  date           DateTime          @db.Date
-  start          DateTime          @db.Time()
-  end            DateTime          @db.Time()
-  status         AppointmentStatus @default(PENDING)
-  professionalId Int               @map("professional_id")
-  patientId      Int               @map("patient_id")
-  professional   User              @relation(fields: [professionalId], references: [id])
-  patient        Patient           @relation(fields: [patientId], references: [id])
+  id             Int      @id @default(autoincrement())
+  start          DateTime
+  end            DateTime
+  professionalId Int      @map("professional_id")
+  patientId      Int      @map("patient_id")
+  professional   User     @relation(fields: [professionalId], references: [id])
+  patient        Patient  @relation(fields: [patientId], references: [id])
 
   @@map("appointments")
 }

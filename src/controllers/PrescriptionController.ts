@@ -24,16 +24,16 @@ interface IQuery {
   page?: number
   pageSize?: number
   patientId?: number
-  date?: string
+  // date?: string
 }
 
-router.get('/', async (req, res) => {
+router.get('/list', async (req, res) => {
   const { user } = req;
   const { page = 1, pageSize = 15, ...params } = req.query as IQuery;
 
   const schema = yup.object().shape({
     patientId: yup.number().integer("Id do paciente errado"),
-    date: yup.date(),
+    // date: yup.date(),
   }).noUnknown();
 
   const search = await schema.validate(params);
@@ -42,6 +42,20 @@ router.get('/', async (req, res) => {
     where: {
       ...search,
       professionalId: user?.id,
+    },
+    include: {
+      patient: {
+        select: { name: true }
+      },
+      prescriptionMedicines: {
+        include: {
+          medicine: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
     },
     skip: (page * pageSize) - pageSize,
     take: pageSize,
