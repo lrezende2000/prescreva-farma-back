@@ -25,40 +25,41 @@ enum Gender {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  crf           String         @db.VarChar(4)
-  crfState      String         @db.VarChar(2)
-  cep           String         @db.VarChar(8)
-  street        String         @db.VarChar(100)
-  district      String         @db.VarChar(50)
-  complement    String?        @db.VarChar(150)
-  number        String         @db.VarChar(10)
-  city          String         @db.VarChar(50)
-  state         String         @db.VarChar(2)
-  tel           String?        @db.VarChar(10)
-  phone         String         @db.VarChar(11)
-  password      String
-  name          String         @db.VarChar(100)
-  cpf           String         @db.VarChar(11)
-  birthDate     DateTime       @map("birth_date") @db.Date
-  gender        Gender
-  nacionality   String         @db.VarChar(50)
-  logo          String
-  token         String?
-  refreshToken  RefreshToken[]
-  patients      Patient[]
-  prescriptions Prescription[]
-  forwarders    Forward[]
-  appointments  Appointment[]
-  Avaliation    Avaliation[]
+  id                Int            @id @default(autoincrement())
+  email             String         @unique
+  crf               String         @db.VarChar(4)
+  crfState          String         @db.VarChar(2)
+  cep               String         @db.VarChar(8)
+  street            String         @db.VarChar(100)
+  district          String         @db.VarChar(50)
+  complement        String?        @db.VarChar(150)
+  number            String         @db.VarChar(10)
+  city              String         @db.VarChar(50)
+  state             String         @db.VarChar(2)
+  tel               String?        @db.VarChar(10)
+  phone             String         @db.VarChar(11)
+  professionalPhone String         @db.VarChar(11)
+  password          String
+  name              String         @db.VarChar(100)
+  cpf               String         @db.VarChar(11)
+  birthDate         DateTime       @map("birth_date") @db.Date
+  gender            Gender
+  nacionality       String         @db.VarChar(50)
+  logo              String?
+  token             String?
+  refreshToken      RefreshToken[]
+  patients          Patient[]
+  prescriptions     Prescription[]
+  forwarders        Forward[]
+  appointments      Appointment[]
+  Avaliation        Avaliation[]
 
   @@map("users")
 }
 
 model Patient {
   id             Int            @id @default(autoincrement())
-  email          String
+  email          String?
   name           String         @db.VarChar(100)
   birthDate      DateTime       @map("birth_date") @db.Date
   gender         Gender
@@ -72,7 +73,6 @@ model Patient {
   prescriptions  Prescription[]
   forwarders     Forward[]
 
-  @@unique([professionalId, email])
   @@map("patients")
 }
 
@@ -116,13 +116,15 @@ model PrescriptionMedicines {
 }
 
 model Forward {
-  id                Int     @id @default(autoincrement())
-  professionalId    Int     @map("professional_id")
-  patientId         Int     @map("patient_id")
-  medicalExperience String  @db.VarChar(50)
-  forwardReason     String  @db.Text
-  professional      User    @relation(fields: [professionalId], references: [id])
-  patient           Patient @relation(fields: [patientId], references: [id])
+  id                Int      @id @default(autoincrement())
+  professionalId    Int      @map("professional_id")
+  patientId         Int      @map("patient_id")
+  medicalExperience String   @db.VarChar(50)
+  forwardReason     String   @db.Text
+  showFooter        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  professional      User     @relation(fields: [professionalId], references: [id])
+  patient           Patient  @relation(fields: [patientId], references: [id])
 
   @@map("forwarders")
 }

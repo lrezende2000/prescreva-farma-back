@@ -4,6 +4,7 @@ import "express-async-errors";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
+import path from "path";
 import cookieParser from 'cookie-parser';
 import {
   PrismaClientKnownRequestError,
@@ -35,11 +36,11 @@ app.use(cors({
 }));
 app.use(helmet());
 app.use(morgan("dev"));
-app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
-app.use(routes)
+app.use(routes);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   if (
@@ -48,6 +49,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     err instanceof PrismaClientRustPanicError ||
     err instanceof PrismaClientInitializationError
   ) {
+    console.log(err)
     return res.status(400).json({
       error: true,
       message: "Algo deu errado",

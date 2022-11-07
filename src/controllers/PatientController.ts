@@ -51,6 +51,16 @@ router.get('/list', async (req, res) => {
       },
       professionalId: user?.id
     },
+    include: {
+      appointments: {
+        where: {
+          start: {
+            gte: new Date(),
+          },
+        },
+        take: 1,
+      }
+    },
     skip: (page * pageSize) - pageSize,
     take: pageSize,
     orderBy: {

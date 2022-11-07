@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 import * as yup from 'yup';
 import multer from 'multer';
 import { v4 as uuid } from 'uuid';
+import fileUpload from 'express-fileupload'
+import fs from 'fs'
 
 import { prismaClient } from '../database/client';
 import { createRefreshTokenService } from '../services/RefreshToken/createRefreshTokenService';
@@ -33,21 +35,40 @@ const rateLimitConfig: Partial<Options> = {
   },
 };
 
-const parser = multer({ dest: `${__dirname}/../logos` });
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, `${__dirname}/../public/logos`)
+  },
+  filename: function (req, file, cb) {
+    const fileName = uuid();
+    const ext = file.originalname.substring(file.originalname.lastIndexOf('.'), file.originalname.length);
+    cb(null, fileName + ext)
+  }
+});
+const upload = multer({
+  storage: storage
+}).any();
 
-router.post("/signup", async (req, res) => {
+router.post("/signup", upload, async (req, res) => {
   const { body } = req;
-  const fileName = uuid();
-  // const json = JSON.parse(body?.json);
+  const json = JSON.parse(body?.json);
 
-  // console.log(fileName);
-  console.log(body);
+  let file;
+  if (Array.isArray(req.files)) {
+    file = req.files[0];
+  } else if (req.files) {
+    file = req.files;
+  }
 
-  // const professional = await createUserService(body);
+  if (file) {
+    json.logo = file.filename;
+  }
 
-  // if (!professional) {
-  //   throw new Error("Não foi possível criar sua conta");
-  // }
+  const professional = await createUserService(json);
+
+  if (!professional) {
+    throw new Error("Não foi possível criar sua conta");
+  }
 
   return res.status(201).json({
     error: false,

@@ -33,14 +33,21 @@ router.get('/list', async (req, res) => {
 
   const schema = yup.object().shape({
     patientId: yup.number().integer("Id do paciente errado"),
-    // date: yup.date(),
+    medicines: yup.string()
   }).noUnknown();
 
-  const search = await schema.validate(params);
+  const { medicines, ...search } = await schema.validate(params);
 
   const prescriptions = await prismaClient.prescription.findMany({
     where: {
       ...search,
+      prescriptionMedicines: {
+        some: {
+          medicineId: {
+            in: medicines ? medicines.split(',').map(id => parseInt(id)) : undefined
+          }
+        }
+      },
       professionalId: user?.id,
     },
     include: {
@@ -59,6 +66,9 @@ router.get('/list', async (req, res) => {
     },
     skip: (page * pageSize) - pageSize,
     take: pageSize,
+    orderBy: {
+      createdAt: 'desc',
+    }
   });
 
   const prescriptionsCount = await prismaClient.prescription.count({
@@ -73,6 +83,91 @@ router.get('/list', async (req, res) => {
     rows: prescriptions,
     totalRows: prescriptionsCount
   });
-})
+});
+
+router.get('/:id', async (req, res) => {
+  const { params: { id }, user } = req;
+
+  const prescription = await prismaClient.prescription.findFirst({
+    where: {
+      id: parseInt(id),
+      professionalId: user?.id
+    },
+    include: {
+      professional: {
+        select: {
+          logo: true,
+          state: true,
+          street: true,
+          district: true,
+          city: true,
+          number: true,
+          name: true,
+          crf: true,
+          crfState: true,
+          professionalPhone: true,
+        }
+      },
+      patient: {
+        select: {
+          name: true,
+          phone: true,
+          tel: true,
+        }
+      },
+      prescriptionMedicines: {
+        select: {
+          medicine: {
+            select: {
+              name: true,
+              pharmaceuticalForm: true,
+            }
+          },
+          concentration: true,
+          administrationForm: true,
+          instructions: true,
+        }
+      }
+    }
+  });
+
+  if (!prescription) {
+    throw new Error("Prescrição não encontrada");
+  }
+
+  return res.json({
+    error: false,
+    prescription,
+  });
+});
+
+router.delete('/:id', async (req, res) => {
+  const { params: { id }, user } = req;
+
+  const foundPrescription = await prismaClient.prescription.findFirst({
+    where: {
+      id: parseInt(id),
+      professionalId: user?.id,
+    }
+  });
+
+  if (!foundPrescription) {
+    throw new Error('Prescrição não encontrada');
+  }
+
+  await prismaClient.prescriptionMedicines.deleteMany({
+    where: {
+      prescriptionId: parseInt(id),
+    }
+  });
+
+  await prismaClient.prescription.delete({
+    where: {
+      id: parseInt(id),
+    },
+  });
+
+  return res.json({ error: false, message: 'Prescrição deletada' });
+});
 
 export default router;

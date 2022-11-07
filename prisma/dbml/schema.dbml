@@ -21,12 +21,14 @@ Table users {
   state String [not null]
   tel String
   phone String [not null]
+  professionalPhone String [not null]
   password String [not null]
   name String [not null]
   cpf String [not null]
   birthDate DateTime [not null]
   gender Gender [not null]
   nacionality String [not null]
+  logo String
   token String
   refreshToken refresh_tokens [not null]
   patients patients [not null]
@@ -38,7 +40,7 @@ Table users {
 
 Table patients {
   id Int [pk, increment]
-  email String [not null]
+  email String
   name String [not null]
   birthDate DateTime [not null]
   gender Gender [not null]
@@ -51,10 +53,6 @@ Table patients {
   appointments appointments [not null]
   prescriptions prescriptions [not null]
   forwarders forwarders [not null]
-
-  indexes {
-    (professionalId, email) [unique]
-  }
 }
 
 Table medicines {
@@ -96,6 +94,8 @@ Table forwarders {
   patientId Int [not null]
   medicalExperience String [not null]
   forwardReason String [not null]
+  showFooter Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
   professional users [not null]
   patient patients [not null]
 }
