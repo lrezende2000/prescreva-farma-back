@@ -5,11 +5,9 @@ import jwt from 'jsonwebtoken';
 import * as yup from 'yup';
 import multer from 'multer';
 import { v4 as uuid } from 'uuid';
-import fs from 'fs'
 
 import { prismaClient } from '../database/client';
 import { createRefreshTokenService } from '../services/RefreshToken/createRefreshTokenService';
-import { getRefreshTokenService } from '../services/RefreshToken/getRefreshTokenService';
 import { updateUserTokenService } from '../services/User/updateUserTokenService';
 import { refreshUserCredentialsService } from '../services/User/refreshUserCredentialsService';
 import { removeUserCredentialsService } from '../services/User/removeUserCredentialsService';
