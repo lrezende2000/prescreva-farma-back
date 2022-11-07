@@ -3,6 +3,8 @@ import rateLimit, { MemoryStore, Options } from 'express-rate-limit';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as yup from 'yup';
+import multer from 'multer';
+import { v4 as uuid } from 'uuid';
 
 import { prismaClient } from '../database/client';
 import { createRefreshTokenService } from '../services/RefreshToken/createRefreshTokenService';
@@ -31,14 +33,21 @@ const rateLimitConfig: Partial<Options> = {
   },
 };
 
+const parser = multer({ dest: `${__dirname}/../logos` });
+
 router.post("/signup", async (req, res) => {
   const { body } = req;
+  const fileName = uuid();
+  // const json = JSON.parse(body?.json);
 
-  const professional = await createUserService(body);
+  // console.log(fileName);
+  console.log(body);
 
-  if (!professional) {
-    throw new Error("Não foi possível criar sua conta");
-  }
+  // const professional = await createUserService(body);
+
+  // if (!professional) {
+  //   throw new Error("Não foi possível criar sua conta");
+  // }
 
   return res.status(201).json({
     error: false,

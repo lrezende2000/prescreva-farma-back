@@ -44,6 +44,7 @@ model User {
   birthDate     DateTime       @map("birth_date") @db.Date
   gender        Gender
   nacionality   String         @db.VarChar(50)
+  logo          String
   token         String?
   refreshToken  RefreshToken[]
   patients      Patient[]
