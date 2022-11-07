@@ -5,7 +5,6 @@ import jwt from 'jsonwebtoken';
 import * as yup from 'yup';
 import multer from 'multer';
 import { v4 as uuid } from 'uuid';
-import fileUpload from 'express-fileupload'
 import fs from 'fs'
 
 import { prismaClient } from '../database/client';
