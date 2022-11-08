@@ -35,7 +35,7 @@ const rateLimitConfig: Partial<Options> = {
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '/../public/logos'))
+    cb(null, path.join(process.env.UPLOAD_DIR as string, 'logos'))
   },
   filename: function (req, file, cb) {
     const fileName = uuid();

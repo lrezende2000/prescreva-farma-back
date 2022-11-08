@@ -13,7 +13,7 @@ import ForwardController from './controllers/ForwardController';
 
 const router = express.Router();
 
-router.use("/public", express.static(path.join(__dirname, 'public')));
+router.use("/public", express.static(process.env.UPLOAD_DIR as string));
 
 router.use(LoginController);
 router.use("/medicines", MedicineController);
