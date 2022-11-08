@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import * as yup from 'yup';
 import multer from 'multer';
 import { v4 as uuid } from 'uuid';
+import path from 'path';
 
 import { prismaClient } from '../database/client';
 import { createRefreshTokenService } from '../services/RefreshToken/createRefreshTokenService';
@@ -34,7 +35,7 @@ const rateLimitConfig: Partial<Options> = {
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, `${__dirname}/../public/logos`)
+    cb(null, path.join(__dirname, '/../public/logos'))
   },
   filename: function (req, file, cb) {
     const fileName = uuid();
