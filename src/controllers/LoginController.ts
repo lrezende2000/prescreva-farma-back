@@ -138,6 +138,7 @@ router.get(
   async (req, res) => {
     try {
       const cookies = req.cookies;
+      console.log(cookies)
 
       if (!cookies?.[COOKIE_REFRESH_TOKEN_KEY]) {
         throw new Error("Token não encontrado");
