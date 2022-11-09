@@ -113,7 +113,7 @@ router.post(
 
     const refreshToken = await createRefreshTokenService(user.id);
 
-    res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
+    res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: false, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
 
     const returnUser = {
       id: user.id,
@@ -138,7 +138,6 @@ router.get(
   async (req, res) => {
     try {
       const cookies = req.cookies;
-      console.log(cookies)
 
       if (!cookies?.[COOKIE_REFRESH_TOKEN_KEY]) {
         throw new Error("Token não encontrado");
@@ -156,7 +155,7 @@ router.get(
 
       const { refreshToken, userId } = data;
 
-      res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
+      res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: false, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
 
       const user = await prismaClient.user.findUnique({
         where: {
@@ -194,14 +193,14 @@ router.post('/logout', async (req, res) => {
   const user = await prismaClient.user.findFirst({ where: { refreshToken: { some: { id: rfId } } } });
 
   if (!user) {
-    res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: true, sameSite: 'none' });
+    res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: false, httpOnly: true, sameSite: 'none' });
     return res.status(204).send('');
   }
 
   // Delete refreshToken in db
   await removeUserCredentialsService(user.id);
 
-  res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: true, sameSite: 'none' });
+  res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: false, httpOnly: true, sameSite: 'none' });
   return res.status(204).send('');
 });
 
