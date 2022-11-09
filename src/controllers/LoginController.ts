@@ -113,7 +113,7 @@ router.post(
 
     const refreshToken = await createRefreshTokenService(user.id);
 
-    res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: false, maxAge: MS_IN_DAY, sameSite: 'none' });
+    res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
 
     const returnUser = {
       id: user.id,
@@ -148,14 +148,14 @@ router.get(
       const data = await refreshUserCredentialsService(rfId);
 
       if (!data) {
-        res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { httpOnly: false, sameSite: 'none', secure: true });
+        res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { httpOnly: true, sameSite: 'none', secure: true });
         await deleteRefreshTokenByIdService(rfId);
         throw new Error();
       }
 
       const { refreshToken, userId } = data;
 
-      res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: false, maxAge: MS_IN_DAY, sameSite: 'none' });
+      res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
 
       const user = await prismaClient.user.findUnique({
         where: {
@@ -193,14 +193,14 @@ router.post('/logout', async (req, res) => {
   const user = await prismaClient.user.findFirst({ where: { refreshToken: { some: { id: rfId } } } });
 
   if (!user) {
-    res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: false, sameSite: 'none' });
+    res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: true, sameSite: 'none' });
     return res.status(204).send('');
   }
 
   // Delete refreshToken in db
   await removeUserCredentialsService(user.id);
 
-  res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: false, sameSite: 'none' });
+  res.clearCookie(COOKIE_REFRESH_TOKEN_KEY, { secure: true, httpOnly: true, sameSite: 'none' });
   return res.status(204).send('');
 });
 
