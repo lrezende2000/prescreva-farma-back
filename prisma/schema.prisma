@@ -142,10 +142,11 @@ model Appointment {
 }
 
 model Avaliation {
-  id             Int  @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   grade          Int
-  professionalId Int  @map("professional_id")
-  professional   User @relation(fields: [professionalId], references: [id])
+  comment        String? @db.Text
+  professionalId Int     @map("professional_id")
+  professional   User    @relation(fields: [professionalId], references: [id])
 }
 
 model RefreshToken {

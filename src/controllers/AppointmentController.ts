@@ -155,4 +155,27 @@ router.get('/calendar', async (req, res) => {
   });
 });
 
+router.delete('/:id', async (req, res) => {
+  const { params: { id }, user } = req;
+
+  const foundAppointment = await prismaClient.appointment.findFirst({
+    where: {
+      id: parseInt(id),
+      professionalId: user?.id,
+    },
+  });
+
+  if (!foundAppointment) {
+    throw new Error('Consulta não encontrada');
+  }
+
+  await prismaClient.appointment.delete({
+    where: {
+      id: parseInt(id),
+    },
+  });
+
+  return res.json({ error: false, message: 'Consulta deletada' });
+});
+
 export default router;

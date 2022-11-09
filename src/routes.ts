@@ -1,6 +1,4 @@
 import express from 'express';
-import path from 'path';
-import rateLimit from 'express-rate-limit';
 
 import passport from './middlewares/passport';
 
@@ -10,6 +8,7 @@ import PatientController from './controllers/PatientController';
 import AppointmentController from './controllers/AppointmentController';
 import PrescriptionController from './controllers/PrescriptionController';
 import ForwardController from './controllers/ForwardController';
+import AvaliationController from './controllers/AvaliationController';
 
 const router = express.Router();
 
@@ -24,5 +23,6 @@ router.use("/patient", PatientController);
 router.use("/appointment", AppointmentController);
 router.use("/prescription", PrescriptionController);
 router.use("/forward", ForwardController);
+router.use("/avaliation", AvaliationController);
 
 export default router;

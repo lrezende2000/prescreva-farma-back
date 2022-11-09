@@ -113,6 +113,7 @@ Table appointments {
 Table Avaliation {
   id Int [pk, increment]
   grade Int [not null]
+  comment String
   professionalId Int [not null]
   professional users [not null]
 }
