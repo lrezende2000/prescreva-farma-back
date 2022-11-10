@@ -18,6 +18,7 @@ export default passport.use(new Strategy(async (token, done) => {
         id: true,
         email: true,
         name: true,
+        isAdmin: true,
       }
     });
 

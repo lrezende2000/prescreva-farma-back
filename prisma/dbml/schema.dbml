@@ -30,6 +30,7 @@ Table users {
   nacionality String [not null]
   logo String
   token String
+  isAdmin Boolean [not null, default: false]
   refreshToken refresh_tokens [not null]
   patients patients [not null]
   prescriptions prescriptions [not null]
@@ -122,6 +123,18 @@ Table refresh_tokens {
   id String [pk]
   userId Int [not null]
   user users [not null]
+}
+
+Table forgot_password_tokens {
+  id String [pk]
+  userId Int [not null]
+  token String [not null]
+}
+
+Table tokens_blacklist {
+  id Int [pk, increment]
+  token String [not null]
+  createdAt DateTime [default: `now()`, not null]
 }
 
 Enum Gender {

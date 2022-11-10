@@ -47,6 +47,7 @@ model User {
   nacionality       String         @db.VarChar(50)
   logo              String?
   token             String?
+  isAdmin           Boolean        @default(false)
   refreshToken      RefreshToken[]
   patients          Patient[]
   prescriptions     Prescription[]
@@ -155,4 +156,21 @@ model RefreshToken {
   user   User   @relation(fields: [userId], references: [id])
 
   @@map("refresh_tokens")
+}
+
+model ForgotPasswordToken {
+  id     String @id @default(uuid())
+  userId Int
+  token  String
+
+  @@map("forgot_password_tokens")
+}
+
+model TokenBlacklist {
+  id        Int      @id @default(autoincrement())
+  token     String
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@map("tokens_blacklist")
 }

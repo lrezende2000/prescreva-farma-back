@@ -6,7 +6,7 @@ export const updateUserTokenService = async (userId: number) => {
   const token = jwt.sign({}, process.env.SECRET, {
     subject: userId.toString(),
     expiresIn: 1000 * 60 * 10,
-    issuer: 'http://localhost',
+    issuer: 'prescrevafarma.com.br',
     audience: 'prescreve_farma'
   });
 

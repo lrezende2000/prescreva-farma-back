@@ -3,6 +3,7 @@ import express from 'express';
 import passport from './middlewares/passport';
 
 import LoginController from './controllers/LoginController';
+import UserController from './controllers/UserController';
 import MedicineController from './controllers/MedicineController';
 import PatientController from './controllers/PatientController';
 import AppointmentController from './controllers/AppointmentController';
@@ -19,6 +20,7 @@ router.use("/medicines", MedicineController);
 
 router.use(passport.authenticate('bearer', { session: false }));
 
+router.use("/user", UserController);
 router.use("/patient", PatientController);
 router.use("/appointment", AppointmentController);
 router.use("/prescription", PrescriptionController);

@@ -6,6 +6,7 @@ import * as yup from 'yup';
 import multer from 'multer';
 import { v4 as uuid } from 'uuid';
 import path from 'path';
+import sgMail from "@sendgrid/mail";
 
 import { prismaClient } from '../database/client';
 import { createRefreshTokenService } from '../services/RefreshToken/createRefreshTokenService';
@@ -14,11 +15,15 @@ import { refreshUserCredentialsService } from '../services/User/refreshUserCrede
 import { removeUserCredentialsService } from '../services/User/removeUserCredentialsService';
 import { deleteRefreshTokenByIdService } from '../services/RefreshToken/deleteRefreshTokenService';
 import { createUserService } from '../services/User/createUserService';
+import { resetPasswordTemplate } from '../templates/resetPassword';
+import tokenBlacklist from '../middlewares/tokenBlacklist';
 
 const router = express.Router();
 const MS_IN_MINUTE = 1000 * 60;
 const MS_IN_DAY = 24 * 60 * MS_IN_MINUTE;
 export const COOKIE_REFRESH_TOKEN_KEY = 'prescreva_farma@rftoken';
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const rateLimitConfig: Partial<Options> = {
   windowMs: 5 * MS_IN_MINUTE,
@@ -32,47 +37,6 @@ const rateLimitConfig: Partial<Options> = {
     });
   },
 };
-
-var storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(process.env.UPLOAD_DIR as string, 'logos'))
-  },
-  filename: function (req, file, cb) {
-    const fileName = uuid();
-    const ext = file.originalname.substring(file.originalname.lastIndexOf('.'), file.originalname.length);
-    cb(null, fileName + ext)
-  }
-});
-const upload = multer({
-  storage: storage
-}).any();
-
-router.post("/signup", upload, async (req, res) => {
-  const { body } = req;
-  const json = JSON.parse(body?.json);
-
-  let file;
-  if (Array.isArray(req.files)) {
-    file = req.files[0];
-  } else if (req.files) {
-    file = req.files;
-  }
-
-  if (file) {
-    json.logo = file.filename;
-  }
-
-  const professional = await createUserService(json);
-
-  if (!professional) {
-    throw new Error("Não foi possível criar sua conta");
-  }
-
-  return res.status(201).json({
-    error: false,
-    message: "Usuário criado com sucesso",
-  });
-});
 
 router.post(
   '/login',
@@ -92,6 +56,7 @@ router.post(
         name: true,
         password: true,
         email: true,
+        isAdmin: true,
       },
     });
 
@@ -118,6 +83,7 @@ router.post(
     const returnUser = {
       id: user.id,
       name: user.name,
+      isAdmin: user.isAdmin,
       token,
     };
 
@@ -165,6 +131,7 @@ router.get(
           id: true,
           name: true,
           token: true,
+          isAdmin: true,
         }
       });
 
@@ -230,16 +197,27 @@ router.post(
         throw new Error();
       }
 
-      // const token = generateToken({ userId: user.id }, MS_IN_MINUTE * 15);
-      // await prismaClient.forgotPasswordToken.create({
-      //   data: {
-      //     token,
-      //     userId: user.id,
-      //   }
-      // });
+      const token = jwt.sign({ userId: user.id }, process.env.SECRET, {
+        subject: user.id.toString(),
+        expiresIn: 1000 * 60 * 10,
+        issuer: 'prescrevafarma.com.br',
+        audience: 'prescreve_farma',
+      });
+      await prismaClient.forgotPasswordToken.create({
+        data: {
+          token,
+          userId: user.id,
+        }
+      });
 
-      // const url = `${req.origin}/resetPassword/?token=${token}`;
-      // sendEmail(user.email.trim(), 'AGL WBF - Redefinição de senha', resetPasswordTemplate(user.name, url));
+      const url = `${req.origin}/resetar-senha/?token=${token}`;
+
+      await sgMail.send({
+        to: user.email,
+        from: "lrezendev.pj@gmail.com",
+        html: resetPasswordTemplate(user.name, url),
+        subject: "Redefinição de senha PrescrevaFarma",
+      });
 
       return res.json({
         error: false,
@@ -255,101 +233,83 @@ router.post(
     }
   });
 
-// interface ITokenPayload {
-//   userId: number;
-//   profile: string;
-//   iat: number;
-//   exp: number;
-//   sub: string;
-// }
+interface ITokenPayload {
+  userId: number;
+  iat: number;
+  exp: number;
+  sub: string;
+}
 
-// router.post(
-//   '/resetPassword',
-//   rateLimit({
-//     ...rateLimitConfig,
-//     store: new MemoryStore(),
-//   }),
-//   tokenBlacklist,
-//   async (req, res) => {
-//     const authToken = req.headers.authorization;
+router.post(
+  '/resetPassword',
+  rateLimit({
+    ...rateLimitConfig,
+    store: new MemoryStore(),
+  }),
+  tokenBlacklist,
+  async (req, res) => {
+    const authToken = req.headers.authorization;
 
-//     if (!authToken) {
-//       return res.status(400).json({
-//         error: true,
-//         message: 'Token é obrigatório',
-//       });
-//     }
+    if (!authToken) {
+      return res.status(400).json({
+        error: true,
+        message: 'Token é obrigatório',
+      });
+    }
 
-//     const [tokenSchema, token] = authToken.split(' ');
+    const [tokenSchema, token] = authToken.split(' ');
 
-//     if (!/^Bearer$/i.test(tokenSchema)) {
-//       return res.status(400).json({
-//         error: true,
-//         message: 'Token em formato errado',
-//       });
-//     }
+    if (!/^Bearer$/i.test(tokenSchema)) {
+      return res.status(400).json({
+        error: true,
+        message: 'Token em formato errado',
+      });
+    }
 
-//     const data = jwt.verify(token, process.env.SECRET);
-//     const { userId } = data as ITokenPayload;
+    const data = jwt.verify(token, process.env.SECRET);
+    const { userId } = data as ITokenPayload;
 
-//     const { newPassword, passwordConfirmation } = req.body;
+    const { newPassword, newPasswordConfirmation } = req.body;
 
-//     const schema = yup.object().shape({
-//       newPassword: yup.string()
-//         .min(8, 'Senha deve ter no mínimo 8 caracteres')
-//         .test({
-//           name: 'Uppercase letter',
-//           message: 'Senha deve contar uma letra maíuscula. Ex.: ABC...',
-//           test: (value) => !!value?.match(/[A-Z]/),
-//         })
-//         .test({
-//           name: 'Lowercase letter',
-//           message: 'Senha deve contar uma letra minúscula. Ex.: abc...',
-//           test: (value) => !!value?.match(/[a-z]/),
-//         })
-//         .test({
-//           name: 'Special characters',
-//           message:
-//             'Senha deve conter um caracter especial. Ex.: (!@#$%.&*()_-=+)',
-//           test: (value) =>
-//             !!value?.match(/[`!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~]/),
-//         }).required(),
-//       passwordConfirmation: yup.string().required().oneOf([yup.ref('newPassword'), null], 'Senhas não conferem'),
-//     }).noUnknown();
+    const schema = yup.object().shape({
+      newPassword: yup.string()
+        .min(6, 'Senha deve ter no mínimo 6 caracteres')
+        .required("Senha é obrigatória"),
+      newPasswordConfirmation: yup.string().required("Confirmação de senha é obrigatória").oneOf([yup.ref('newPassword'), null], 'Senhas não conferem'),
+    }).noUnknown();
 
-//     await schema.validate({ newPassword, passwordConfirmation });
+    await schema.validate({ newPassword, newPasswordConfirmation });
 
-//     const user = await client.user.findUnique({ where: { id: userId } });
+    const user = await prismaClient.user.findUnique({ where: { id: userId } });
 
-//     if (!user) {
-//       throw new Error();
-//     }
+    if (!user) {
+      throw new Error();
+    }
 
-//     const passwordHash = await bcrypt.hash(newPassword, 8);
-//     await client.user.update({
-//       where: { id: userId },
-//       data: {
-//         password: passwordHash,
-//         updatedAt: getUTCDate(),
-//         token: null,
-//       }
-//     });
+    const passwordHash = await bcrypt.hash(newPassword, 8);
+    await prismaClient.user.update({
+      where: { id: userId },
+      data: {
+        password: passwordHash,
+        token: null,
+      }
+    });
 
-//     const forgotTokens = await client.forgotPasswordToken.findMany({
-//       where: {
-//         userId: user.id,
-//       }
-//     });
+    const forgotTokens = await prismaClient.forgotPasswordToken.findMany({
+      where: {
+        userId: user.id,
+      }
+    });
 
-//     await client.tokenBlacklist.createMany({
-//       data: forgotTokens.map(fT => ({ token: fT.token, createdAt: getUTCDate() })),
-//     });
-//     await client.forgotPasswordToken.deleteMany({ where: { userId: user.id } });
+    await prismaClient.tokenBlacklist.createMany({
+      data: forgotTokens.map(fT => ({ token: fT.token })),
+    });
+    await prismaClient.forgotPasswordToken.deleteMany({ where: { userId: user.id } });
 
-//     return res.json({
-//       error: false,
-//       message: 'Senha alterada com sucesso'
-//     });
-//   });
+    return res.json({
+      error: false,
+      message: 'Senha alterada com sucesso'
+    });
+  });
 
 export default router;
