@@ -10,7 +10,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
 
     next();
   } catch (err) {
-    return res.status(401).json({
+    return res.status(403).json({
       error: true,
       message: 'Você não tem acesso a este recurso',
     });

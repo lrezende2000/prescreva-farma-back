@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
-app.use(routes);
+app.use("/api", routes);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   if (
