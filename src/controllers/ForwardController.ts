@@ -93,7 +93,58 @@ router.get('/list/all', async (req, res) => {
   });
 });
 
+interface IQueryPreview {
+  patientId?: string;
+}
 
+
+router.get("/preview", async (req, res) => {
+  const { user } = req;
+  const { patientId } = req.query as IQueryPreview;
+
+  let patient = null;
+
+  const professional = await prismaClient.user.findUnique({
+    where: {
+      id: user?.id,
+    },
+    select: {
+      logo: true,
+      state: true,
+      street: true,
+      district: true,
+      city: true,
+      number: true,
+      name: true,
+      crf: true,
+      crfState: true,
+      professionalPhone: true,
+    }
+  });
+
+  if (!professional) {
+    throw new Error("Profissional não encontrado");
+  }
+
+  if (patientId) {
+    patient = await prismaClient.patient.findFirst({
+      where: {
+        id: parseInt(patientId),
+        professionalId: user?.id,
+      }
+    });
+  }
+
+  if (!patient) {
+    throw new Error("Paciente não encontrado");
+  }
+
+  return res.json({
+    error: false,
+    patient,
+    professional,
+  });
+});
 
 router.get('/:id', async (req, res) => {
   const { params: { id }, user } = req;

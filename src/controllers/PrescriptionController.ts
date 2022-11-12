@@ -85,6 +85,77 @@ router.get('/list', async (req, res) => {
   });
 });
 
+interface IQueryPreview {
+  patientId?: string;
+  medicines?: string;
+}
+
+router.get("/preview", async (req, res) => {
+  const { user } = req;
+  const { medicines, patientId } = req.query as IQueryPreview;
+
+  let patient = null, medicinesReturn: { name: string; pharmaceuticalForm: string; }[] = [];
+
+  const professional = await prismaClient.user.findUnique({
+    where: {
+      id: user?.id,
+    },
+    select: {
+      logo: true,
+      state: true,
+      street: true,
+      district: true,
+      city: true,
+      number: true,
+      name: true,
+      crf: true,
+      crfState: true,
+      professionalPhone: true,
+    }
+  });
+
+  if (!professional) {
+    throw new Error("Profissional não encontrado");
+  }
+
+  if (patientId) {
+    patient = await prismaClient.patient.findFirst({
+      where: {
+        id: parseInt(patientId),
+        professionalId: user?.id,
+      }
+    });
+  }
+
+  if (!patient) {
+    throw new Error("Paciente não encontrado");
+  }
+
+  if (medicines) {
+    const medicineIds = medicines.split(",");
+
+    medicinesReturn = await prismaClient.medicine.findMany({
+      where: {
+        id: {
+          in: medicineIds.map(mId => parseInt(mId))
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        pharmaceuticalForm: true,
+      }
+    });
+  }
+
+  return res.json({
+    error: false,
+    medicines: medicinesReturn,
+    patient,
+    professional,
+  });
+});
+
 router.get('/:id', async (req, res) => {
   const { params: { id }, user } = req;
 
