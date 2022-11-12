@@ -6,7 +6,7 @@
   "author": "LRezende/ArthurPorto",
   "license": "MIT",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/server.js",
     "dev": "ts-node-dev --inspect --transpile-only --ignore-watch node_modules --respawn src/server.ts",
     "build": "npx tsc"
   },
