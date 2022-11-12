@@ -61,8 +61,9 @@ Table medicines {
   name String [not null]
   subGroup String [not null]
   pharmaceuticalForm String [not null]
-  maximumDosage String [not null]
+  maximumDosage String
   therapeuticIndication String [not null]
+  type MedicineType [not null, default: 'MEDICINE']
   prescriptionMedicines prescription_medicines [not null]
 }
 
@@ -141,6 +142,11 @@ Enum Gender {
   WOMAN
   MEN
   OTHER
+}
+
+Enum MedicineType {
+  MEDICINE
+  HERBAL_MEDICINES
 }
 
 Ref: patients.professionalId > users.id

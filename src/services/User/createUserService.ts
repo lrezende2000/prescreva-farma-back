@@ -1,12 +1,17 @@
 import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import sgMail from "@sendgrid/mail";
 
 import { prismaClient } from "../../database/client";
+import { generateRandomPassword } from "../../helpers/password";
+import { welcomeTemplate } from "../../templates/welcome";
 import { createUserSchema } from "../../validations/User";
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 type CreateUserType = Omit<User, "id">;
 
-export const createUserService = async (data: CreateUserType) => {
+export const createUserService = async (data: CreateUserType, url?: string) => {
   const validatedData = await createUserSchema.validate(data);
 
   const foundEmail = await prismaClient.user.findFirst({
@@ -30,11 +35,22 @@ export const createUserService = async (data: CreateUserType) => {
     throw new Error('Já existe um usuário com esse CRF');
   }
 
-  const hashedPassword = await bcrypt.hash(validatedData.password, 11);
+  const password = generateRandomPassword();
+
+  const hashedPassword = await bcrypt.hash(password, 11);
 
   const user = await prismaClient.user.create({
     data: { ...validatedData, password: hashedPassword },
   });
+
+  if (url) {
+    await sgMail.send({
+      to: user.email,
+      from: "lrezendev.pj@gmail.com",
+      html: welcomeTemplate(user.name, url, user.email, password),
+      subject: "Seja bem vindo ao PrescrevaFarma!",
+    });
+  }
 
   return user;
 };

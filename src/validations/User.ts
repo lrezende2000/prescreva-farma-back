@@ -38,11 +38,11 @@ export const createUserSchema = yup
       .string()
       .max(50, "Nacionalidade precisa ter menos de 50 caracteres")
       .required("Nacionalidade é obrigatória"),
-    password: yup
-      .string()
-      .min(6, "Senha deve ter no mínimo 6 caracteres")
-      .max(20, "Senha de ter no máximo 20 caracteres")
-      .required("Senha é obrigatória"),
+    // password: yup
+    //   .string()
+    //   .min(6, "Senha deve ter no mínimo 6 caracteres")
+    //   .max(20, "Senha de ter no máximo 20 caracteres")
+    //   .required("Senha é obrigatória"),
     cep: yup
       .string()
       .matches(/\d{8}/, "CEP no formato errado")

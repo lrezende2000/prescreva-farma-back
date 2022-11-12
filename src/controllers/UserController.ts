@@ -59,7 +59,8 @@ router.get("/list", admin, async (req, res) => {
     },
     select: {
       id: true,
-      name: true
+      name: true,
+      email: true,
     },
     skip: (page * pageSize) - pageSize,
     take: pageSize,
@@ -95,7 +96,7 @@ router.get("/list/all", admin, async (req, res) => {
     },
     select: {
       id: true,
-      name: true
+      name: true,
     },
     orderBy: {
       name: 'asc'
@@ -123,7 +124,9 @@ router.post("/", admin, upload, async (req, res) => {
     json.logo = file.filename;
   }
 
-  const professional = await createUserService(json);
+  const url = req.origin ? `${req.origin}/entrar/` : '';
+
+  const professional = await createUserService(json, url);
 
   if (!professional) {
     throw new Error("Não foi possível criar sua conta");

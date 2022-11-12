@@ -3,9 +3,6 @@ import rateLimit, { MemoryStore, Options } from 'express-rate-limit';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as yup from 'yup';
-import multer from 'multer';
-import { v4 as uuid } from 'uuid';
-import path from 'path';
 import sgMail from "@sendgrid/mail";
 
 import { prismaClient } from '../database/client';
@@ -14,7 +11,6 @@ import { updateUserTokenService } from '../services/User/updateUserTokenService'
 import { refreshUserCredentialsService } from '../services/User/refreshUserCredentialsService';
 import { removeUserCredentialsService } from '../services/User/removeUserCredentialsService';
 import { deleteRefreshTokenByIdService } from '../services/RefreshToken/deleteRefreshTokenService';
-import { createUserService } from '../services/User/createUserService';
 import { resetPasswordTemplate } from '../templates/resetPassword';
 import tokenBlacklist from '../middlewares/tokenBlacklist';
 

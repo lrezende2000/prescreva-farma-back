@@ -77,13 +77,19 @@ model Patient {
   @@map("patients")
 }
 
+enum MedicineType {
+  MEDICINE
+  HERBAL_MEDICINES
+}
+
 model Medicine {
   id                    Int                     @id @default(autoincrement())
   name                  String
   subGroup              String                  @map("sub_group")
   pharmaceuticalForm    String                  @map("pharmaceutical_form")
-  maximumDosage         String                  @map("maximum_dosage")
+  maximumDosage         String?                 @map("maximum_dosage")
   therapeuticIndication String                  @map("therapeutic_indication") @db.Text
+  type                  MedicineType            @default(MEDICINE)
   prescriptionMedicines PrescriptionMedicines[]
 
   @@map("medicines")
