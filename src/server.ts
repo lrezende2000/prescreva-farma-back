@@ -13,10 +13,13 @@ import {
   PrismaClientInitializationError,
   PrismaClientValidationError,
 } from "@prisma/client/runtime";
+import sgMail from '@sendgrid/mail'
 
 import routes from './routes';
 import allowedOrigins from "./config/allowedOrigins";
 import credentials from "./middlewares/credentials";
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 const app = express();
 const PORT = process.env.PORT || 8000;

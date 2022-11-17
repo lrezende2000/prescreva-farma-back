@@ -7,8 +7,6 @@ import { generateRandomPassword } from "../../helpers/password";
 import { welcomeTemplate } from "../../templates/welcome";
 import { createUserSchema } from "../../validations/User";
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 type CreateUserType = Omit<User, "id">;
 
 export const createUserService = async (data: CreateUserType, url?: string) => {

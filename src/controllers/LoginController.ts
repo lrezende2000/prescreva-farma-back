@@ -19,8 +19,6 @@ const MS_IN_MINUTE = 1000 * 60;
 const MS_IN_DAY = 24 * 60 * MS_IN_MINUTE;
 export const COOKIE_REFRESH_TOKEN_KEY = 'prescreva_farma@rftoken';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 const rateLimitConfig: Partial<Options> = {
   windowMs: 5 * MS_IN_MINUTE,
   max: 5,
