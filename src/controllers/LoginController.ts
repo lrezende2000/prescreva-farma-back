@@ -135,7 +135,6 @@ router.get(
       });
     } catch (err) {
       if (err instanceof Error) {
-        console.log(err);
         return res.status(403).json({
           error: true,
           message: 'Token inválido ou expirado! Logue-se novamente',

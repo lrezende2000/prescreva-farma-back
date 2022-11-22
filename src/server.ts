@@ -52,7 +52,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     err instanceof PrismaClientRustPanicError ||
     err instanceof PrismaClientInitializationError
   ) {
-    console.log(err)
     return res.status(400).json({
       error: true,
       message: "Algo deu errado",
@@ -60,7 +59,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   }
 
   if (err instanceof PrismaClientValidationError) {
-    console.log(err.message)
     return res.status(400).json({
       error: true,
       message: "Erro na validação de dados",
@@ -68,7 +66,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   }
 
   if (err instanceof Error) {
-    console.log(err.message)
     return res.status(400).json({
       error: true,
       message: err.message,
