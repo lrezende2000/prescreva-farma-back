@@ -5,16 +5,26 @@ import { prismaClient } from "../database/client";
 (async () => {
   const email = process.env.ADMIN_EMAIL
   const password = process.env.ADMIN_PASSWORD
-
+  
   if (!email || !password) {
     console.log("Defina as variáveis de ambiente ADMIN_EMAIL e ADMIN_PASSWORD para criar o usuário administrador");
     return;
   }
-
+  
+  const hashedPassword = await bcrypt.hash(password, 11);
   const foundAdminUser = await prismaClient.user.findFirst({ where: { isAdmin: true } });
 
   if (foundAdminUser) {
     console.log("Usuário admin já existe");
+    console.log("Resetando senha");
+    await prismaClient.user.update({
+      where: {
+        email: foundAdminUser.email
+      },
+      data: {
+        password: hashedPassword
+      }
+    })
     console.log(`Email: ${foundAdminUser.email}`);
     return;
   }
@@ -27,7 +37,6 @@ import { prismaClient } from "../database/client";
     return;
   }
 
-  const hashedPassword = await bcrypt.hash(password, 11);
 
   await prismaClient.user.create({
     data: {

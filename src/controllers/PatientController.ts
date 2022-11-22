@@ -164,10 +164,21 @@ router.delete('/:id', async (req, res) => {
       id: parseInt(id),
       professionalId: user?.id,
     },
+    select: {
+      id: true,
+      _count: true,
+    }
   });
 
   if (!patient) {
     throw new Error('Paciente não encontrado');
+  }
+
+  if (Object.values(patient._count).some(count => count > 0)) {
+    return res.json({
+      error: true,
+      message: 'Não foi possível deletar esse paciente, pois tem registros associados a ele',
+    });
   }
 
   await prismaClient.patient.delete({

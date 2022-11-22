@@ -138,6 +138,78 @@ router.post("/", admin, upload, async (req, res) => {
   });
 });
 
+router.delete("/:id", admin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    await prismaClient.refreshToken.deleteMany({
+      where: {
+        userId: parseInt(userId)
+      }
+    })
+
+    await prismaClient.avaliation.deleteMany({
+      where: {
+        professionalId: parseInt(userId)
+      }
+    })
+
+    await prismaClient.forgotPasswordToken.deleteMany({
+      where: {
+        userId: parseInt(userId)
+      }
+    })
+
+    await prismaClient.prescriptionMedicines.deleteMany({
+      where: {
+        prescription: {
+          professionalId: parseInt(userId)
+        }
+      }
+    })
+
+    await prismaClient.prescription.deleteMany({
+      where: {
+        professionalId: parseInt(userId)
+      }
+    })
+
+    await prismaClient.appointment.deleteMany({
+      where: {
+        professionalId: parseInt(userId)
+      }
+    })
+
+    await prismaClient.forward.deleteMany({
+      where: {
+        professionalId: parseInt(userId)
+      }
+    })
+
+    await prismaClient.patient.deleteMany({
+      where: {
+        professionalId: parseInt(userId)
+      }
+    })
+
+    await prismaClient.user.delete({
+      where: {
+        id: parseInt(userId)
+      }
+    })
+
+    return res.json({
+      error: false,
+      message: "Usuário deletado com sucesso",
+    });
+  } catch {
+    return res.json({
+      error: true,
+      message: 'Não foi possível deletar o usuário'
+    })
+  }
+});
+
 router.get("/profile", async (req, res) => {
   const { user: loggedUser } = req;
 

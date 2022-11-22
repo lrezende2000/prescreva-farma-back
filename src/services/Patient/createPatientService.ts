@@ -15,8 +15,19 @@ export const createPacientService = async (data: CreatePatientType) => {
     }
   });
 
+  const cpfAlreadyExists = await prismaClient.patient.findFirst({
+    where: {
+      professionalId: data.professionalId,
+      cpf: data.cpf,
+    }
+  })
+
   if (emailAlreadyExists && emailAlreadyExists.email) {
     throw new Error("Já existe um paciente com esse email");
+  }
+
+  if (cpfAlreadyExists) {
+    throw new Error("Já existe um paciente com esse CPF");
   }
 
   const pacient = await prismaClient.patient.create({
