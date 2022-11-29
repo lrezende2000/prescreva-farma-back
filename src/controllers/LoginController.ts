@@ -16,7 +16,6 @@ import tokenBlacklist from '../middlewares/tokenBlacklist';
 
 const router = express.Router();
 const MS_IN_MINUTE = 1000 * 60;
-const MS_IN_DAY = 24 * 60 * MS_IN_MINUTE;
 export const COOKIE_REFRESH_TOKEN_KEY = 'prescreva_farma@rftoken';
 
 const rateLimitConfig: Partial<Options> = {
@@ -72,7 +71,7 @@ router.post(
 
     const refreshToken = await createRefreshTokenService(user.id);
 
-    res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
+    res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_MINUTE * 5, sameSite: 'none' });
 
     const returnUser = {
       id: user.id,
@@ -115,7 +114,7 @@ router.get(
 
       const { refreshToken, userId } = data;
 
-      res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_DAY, sameSite: 'none' });
+      res.cookie(COOKIE_REFRESH_TOKEN_KEY, refreshToken, { secure: true, httpOnly: true, maxAge: MS_IN_MINUTE * 5, sameSite: 'none' });
 
       const user = await prismaClient.user.findUnique({
         where: {

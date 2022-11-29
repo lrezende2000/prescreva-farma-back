@@ -5,7 +5,7 @@ import { prismaClient } from '../../database/client';
 export const updateUserTokenService = async (userId: number) => {
   const token = jwt.sign({}, process.env.SECRET, {
     subject: userId.toString(),
-    expiresIn: 1000 * 60 * 10,
+    expiresIn: 2 * 60,
     issuer: 'prescrevafarma.com.br',
     audience: 'prescreve_farma'
   });

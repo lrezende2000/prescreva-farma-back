@@ -12,7 +12,7 @@ export const createRefreshTokenService = async (userId: number) => {
     }
   });
 
-  const refreshTokenJwt = jwt.sign({ rfId: refreshToken.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1 day' });
+  const refreshTokenJwt = jwt.sign({ rfId: refreshToken.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: 60 * 5 });
 
   return refreshTokenJwt;
 }
